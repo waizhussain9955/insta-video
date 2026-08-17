@@ -18,6 +18,7 @@ export default function StoryDownloader() {
   const [zipping, setZipping] = useState(false);
   const [error, setError] = useState("");
   const [stories, setStories] = useState<StoryItem[]>([]);
+  const [videoState, setVideoState] = useState<Record<number, boolean>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,18 +28,33 @@ export default function StoryDownloader() {
     setLoading(true);
     setError("");
     setStories([]);
+    setVideoState({});
 
     try {
       const response = await axios.post(`${API_BASE_URL}/api/download`, {
         type: "stories",
         username: targetInput
       });
-      setStories(response.data.stories || []);
+      const fetchedStories = response.data.stories || [];
+      setStories(fetchedStories);
+      
+      // Auto-detect video type for items
+      const initialVideoState: Record<number, boolean> = {};
+      fetchedStories.forEach((story: StoryItem, idx: number) => {
+        if (story.type === "video" || story.url.includes(".mp4") || story.url.includes("/t50.") || !story.url.includes(".jpg")) {
+          initialVideoState[idx] = true;
+        }
+      });
+      setVideoState(initialVideoState);
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to fetch stories/highlights. Please verify link or username is public.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const markAsVideo = (idx: number) => {
+    setVideoState(prev => ({ ...prev, [idx]: true }));
   };
 
   const handleDownloadAllZip = async () => {
@@ -48,7 +64,7 @@ export default function StoryDownloader() {
       const zip = new JSZip();
       for (let i = 0; i < stories.length; i++) {
         const item = stories[i];
-        const isVideo = item.type === "video" || item.url.includes(".mp4") || item.url.includes("/t50.");
+        const isVideo = videoState[i] || item.type === "video" || item.url.includes(".mp4") || item.url.includes("/t50.");
         const proxyUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}${isVideo ? '&type=video' : ''}`;
         const res = await fetch(proxyUrl);
         if (res.ok) {
@@ -150,7 +166,7 @@ export default function StoryDownloader() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {stories.map((story, idx) => {
-              const isVideo = story.type === "video" || story.url.includes(".mp4") || story.url.includes("/t50.");
+              const isVideo = videoState[idx] || story.type === "video" || story.url.includes(".mp4") || story.url.includes("/t50.");
               const proxyVideoUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}&type=video`;
               const proxyImageUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}`;
               const proxyMp3Url = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}&format=mp3`;
@@ -174,7 +190,12 @@ export default function StoryDownloader() {
                         <source src={proxyVideoUrl} type="video/mp4" />
                       </video>
                     ) : (
-                      <img src={proxyImageUrl} alt="" className="w-full h-full object-cover" />
+                      <img 
+                        src={proxyImageUrl} 
+                        alt="" 
+                        onError={() => markAsVideo(idx)} 
+                        className="w-full h-full object-cover" 
+                      />
                     )}
                   </div>
 
@@ -190,17 +211,15 @@ export default function StoryDownloader() {
                         <span>{isVideo ? "Download MP4" : "Download Photo"}</span>
                       </a>
 
-                      {isVideo && (
-                        <a
-                          href={proxyMp3Url}
-                          download={`story_${idx + 1}.mp3`}
-                          className="bg-white/10 hover:bg-white/20 text-pink-300 font-semibold rounded-lg px-2.5 py-2 text-xs flex items-center justify-center space-x-1 transition border border-white/10"
-                          title="Download Audio Only (MP3)"
-                        >
-                          <Music className="h-3.5 w-3.5 text-pink-400" />
-                          <span>MP3</span>
-                        </a>
-                      )}
+                      <a
+                        href={proxyMp3Url}
+                        download={`story_${idx + 1}.mp3`}
+                        className="bg-white/10 hover:bg-white/20 text-pink-300 font-semibold rounded-lg px-2.5 py-2 text-xs flex items-center justify-center space-x-1 transition border border-white/10"
+                        title="Download Audio Only (MP3)"
+                      >
+                        <Music className="h-3.5 w-3.5 text-pink-400" />
+                        <span>MP3</span>
+                      </a>
                     </div>
                   </div>
                 </div>
