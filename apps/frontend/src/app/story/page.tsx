@@ -21,15 +21,8 @@ export default function StoryDownloader() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    let targetUsername = username.trim();
-    if (targetUsername.includes("instagram.com")) {
-      const match = targetUsername.match(/instagram\.com\/(?:stories\/)?([a-zA-Z0-9_\.]+)/i);
-      if (match) {
-        targetUsername = match[1];
-        setUsername(targetUsername);
-      }
-    }
-    if (!targetUsername) return;
+    const targetInput = username.trim();
+    if (!targetInput) return;
 
     setLoading(true);
     setError("");
@@ -38,11 +31,11 @@ export default function StoryDownloader() {
     try {
       const response = await axios.post(`${API_BASE_URL}/api/download`, {
         type: "stories",
-        username: targetUsername
+        username: targetInput
       });
       setStories(response.data.stories || []);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to fetch stories. Please verify username is public.");
+      setError(err.response?.data?.error || "Failed to fetch stories/highlights. Please verify link or username is public.");
     } finally {
       setLoading(false);
     }
@@ -68,7 +61,7 @@ export default function StoryDownloader() {
       const downloadUrl = URL.createObjectURL(zipBlob);
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = `${username}_stories_${Date.now()}.zip`;
+      link.download = `stories_${Date.now()}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -87,10 +80,10 @@ export default function StoryDownloader() {
           Tool #2
         </span>
         <h1 className="text-3xl font-extrabold text-white mt-4 sm:text-5xl">
-          Instagram <span className="text-gradient">Story & Video</span> Downloader
+          Instagram <span className="text-gradient">Story & Highlight</span> Downloader
         </h1>
         <p className="mt-4 text-zinc-400">
-          Download active stories and highlights from public profiles anonymously. Save MP4 videos or MP3 audio easily.
+          Download active stories and highlights from any public profile or highlight link. Save MP4 videos or MP3 audio easily.
         </p>
       </div>
 
@@ -98,7 +91,7 @@ export default function StoryDownloader() {
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
-            placeholder="Enter Instagram username (e.g. cristiano)..."
+            placeholder="Enter Username or Story/Highlight Link (e.g. instagram.com/s/aGlnaG... or cristiano)"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="flex-grow glass-input text-white rounded-xl px-5 py-4 text-sm"
@@ -129,7 +122,7 @@ export default function StoryDownloader() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="h-10 w-10 text-secondary animate-spin mb-4" />
-          <p className="text-zinc-400 text-sm">Querying active video stories from API...</p>
+          <p className="text-zinc-400 text-sm">Querying active video stories and highlight nodes...</p>
         </div>
       )}
 
@@ -138,7 +131,7 @@ export default function StoryDownloader() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-white/10">
             <h2 className="text-lg font-bold text-white flex items-center space-x-2">
               <PlayCircle className="h-5 w-5 text-secondary" />
-              <span>Active Stories ({stories.length})</span>
+              <span>Stories / Highlights Found ({stories.length})</span>
             </h2>
 
             <button
@@ -186,7 +179,7 @@ export default function StoryDownloader() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="p-3 border-t border-white/10 bg-zinc-950/80 backdrop-blur-sm flex flex-col gap-2">
+                  <div className="p-3 border-t border-white/10 bg-zinc-950/80 backdrop-blur-md flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <a
                         href={isVideo ? proxyVideoUrl : proxyImageUrl}

@@ -8,9 +8,9 @@ Route::get('/', function () {
     return response()->json([
         'status' => 'online',
         'service' => 'Instagram Media Downloader API',
-        'version' => '1.6.0',
+        'version' => '1.7.0',
         'endpoints' => [
-            'POST /api/download' => 'Fetch Instagram media metadata (Reels, Videos, Stories, Bulk Video)',
+            'POST /api/download' => 'Fetch Instagram media metadata (Reels, Videos, Stories, Highlights, Bulk)',
             'GET /api/proxy' => 'Proxy media stream bypassing Instagram CDN CORS'
         ]
     ]);
@@ -27,7 +27,7 @@ Route::options('/{any}', function () {
 // Extract Shortcode from Instagram Link
 function getInstagramShortcode($url) {
     if (empty($url)) return null;
-    if (preg_match('/(?:p|reel|reels|tv|stories\/[^\/]+)\/([A-Za-z0-9_-]+)/', $url, $matches)) {
+    if (preg_match('/(?:p|reel|reels|tv|stories\/[^\/]+|s\/[^\/]+)\/([A-Za-z0-9_:-]+)/', $url, $matches)) {
         return $matches[1];
     }
     return null;
@@ -190,7 +190,7 @@ function fetchSnapSaveMediaPHP($targetUrl) {
     return null;
 }
 
-// ===== ENGINE 3: DEDICATED PROFILE REELS & VIDEOS SCRAPER =====
+// ===== ENGINE 3: PROFILE REELS & VIDEOS SCRAPER =====
 function fetchInstagramProfileVideosPHP($username, $limit = 12) {
     try {
         $cleanUsername = trim(str_replace(['https://', 'http://', 'www.instagram.com/', 'instagram.com/', '/', '@', 'reels'], '', $username));
@@ -280,16 +280,22 @@ function fetchInstagramProfileVideosPHP($username, $limit = 12) {
     return null;
 }
 
-// ===== ENGINE 4: DEDICATED STORY SCRAPER =====
-function fetchInstagramStoriesPHP($username) {
+// ===== ENGINE 4: DEDICATED STORY & HIGHLIGHT SCRAPER =====
+function fetchInstagramStoriesPHP($input) {
     try {
-        $cleanUsername = trim(str_replace(['https://', 'http://', 'www.instagram.com/', 'instagram.com/', '/', '@', 'stories'], '', $username));
-        $storyUrl = "https://www.instagram.com/stories/{$cleanUsername}/";
+        $targetUrl = trim($input);
 
-        $cobaltRes = fetchCobaltInstagram($storyUrl);
+        // If not a full URL, convert username to stories link
+        if (!str_starts_with($targetUrl, 'http://') && !str_starts_with($targetUrl, 'https://')) {
+            $cleanUsername = trim(str_replace(['@', '/'], '', $targetUrl));
+            $targetUrl = "https://www.instagram.com/stories/{$cleanUsername}/";
+        }
+
+        // 1. Try Cobalt API with full URL (handles Story links & Highlight links like /s/aGlnaG...)
+        $cobaltRes = fetchCobaltInstagram($targetUrl);
         if ($cobaltRes && !empty($cobaltRes['media'])) {
             return array_map(function ($item, $idx) {
-                $isVideo = $item['type'] === 'video' || str_contains($item['url'], '.mp4') || str_contains($item['url'], '/t50.');
+                $isVideo = ($item['type'] ?? '') === 'video' || str_contains($item['url'], '.mp4') || str_contains($item['url'], '/t50.');
                 return [
                     'id' => 'story_' . $idx . '_' . time(),
                     'url' => $item['url'],
@@ -299,10 +305,11 @@ function fetchInstagramStoriesPHP($username) {
             }, $cobaltRes['media'], array_keys($cobaltRes['media']));
         }
 
-        $snapRes = fetchSnapSaveMediaPHP($storyUrl);
+        // 2. Try SnapSave with full URL
+        $snapRes = fetchSnapSaveMediaPHP($targetUrl);
         if ($snapRes && !empty($snapRes['media'])) {
             return array_map(function ($item, $idx) {
-                $isVideo = $item['type'] === 'video' || str_contains($item['url'], '.mp4') || str_contains($item['url'], '/t50.');
+                $isVideo = ($item['type'] ?? '') === 'video' || str_contains($item['url'], '.mp4') || str_contains($item['url'], '/t50.');
                 return [
                     'id' => 'story_' . $idx . '_' . time(),
                     'url' => $item['url'],
@@ -436,7 +443,7 @@ Route::post('/api/download', function (Request $request) {
 
     $targetInput = $rawUrl ?: $rawUsername;
 
-    // If stories request
+    // If stories or highlight link request
     if ($type === 'stories') {
         $storyPosts = fetchInstagramStoriesPHP($rawUsername ?: $targetInput);
         if ($storyPosts && !empty($storyPosts)) {
