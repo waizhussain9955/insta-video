@@ -8,9 +8,9 @@ Route::get('/', function () {
     return response()->json([
         'status' => 'online',
         'service' => 'Instagram Media Downloader API',
-        'version' => '1.3.0',
+        'version' => '1.4.0',
         'endpoints' => [
-            'POST /api/download' => 'Fetch Instagram media metadata (Reels, Videos, Stories, Bulk)',
+            'POST /api/download' => 'Fetch Instagram media metadata (Reels, Videos, Stories, Bulk Video)',
             'GET /api/proxy' => 'Proxy media stream bypassing Instagram CDN CORS'
         ]
     ]);
@@ -188,72 +188,86 @@ function fetchSnapSaveMediaPHP($targetUrl) {
     return null;
 }
 
-// ===== ENGINE 3: PROFILE POSTS SCRAPER WITH GUARANTEED MP4 VIDEO LINKS =====
-function fetchInstagramProfilePostsPHP($username, $limit = 12) {
+// ===== ENGINE 3: DEDICATED PROFILE REELS & VIDEOS SCRAPER =====
+function fetchInstagramProfileVideosPHP($username, $limit = 12) {
     try {
-        $cleanUsername = trim(str_replace(['https://', 'http://', 'www.instagram.com/', 'instagram.com/', '/', '@'], '', $username));
-        $profileUrl = "https://www.instagram.com/{$cleanUsername}/";
+        $cleanUsername = trim(str_replace(['https://', 'http://', 'www.instagram.com/', 'instagram.com/', '/', '@', 'reels'], '', $username));
+        
+        $urlsToTry = [
+            "https://www.instagram.com/{$cleanUsername}/reels/",
+            "https://www.instagram.com/{$cleanUsername}/"
+        ];
 
-        $response = Http::timeout(12)->withHeaders([
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        ])->get($profileUrl);
+        $shortcodes = [];
 
-        if ($response->successful()) {
-            $html = $response->body();
-            
-            preg_match_all('/"shortcode":"([A-Za-z0-9_-]+)"/', $html, $matches);
-            $shortcodes = array_unique($matches[1] ?? []);
+        foreach ($urlsToTry as $url) {
+            $resp = Http::timeout(10)->withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            ])->get($url);
 
-            if (!empty($shortcodes)) {
-                $selected = array_slice($shortcodes, 0, $limit);
-                $posts = [];
-                foreach ($selected as $idx => $code) {
-                    $embedUrl = "https://www.instagram.com/p/{$code}/embed/captioned/";
-                    $embedResp = Http::timeout(8)->withHeaders([
-                        'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                    ])->get($embedUrl);
-
-                    if ($embedResp->successful()) {
-                        $embedHtml = $embedResp->body();
-                        
-                        $videoUrl = null;
-                        $imageUrl = null;
-
-                        if (preg_match('/"video_url"\s*:\s*"([^"]+)"/', $embedHtml, $vMatch)) {
-                            $videoUrl = stripcslashes(html_entity_decode($vMatch[1]));
-                        }
-                        if (preg_match('/"display_url"\s*:\s*"([^"]+)"/', $embedHtml, $iMatch)) {
-                            $imageUrl = stripcslashes(html_entity_decode($iMatch[1]));
-                        }
-
-                        preg_match_all('#https?://[^\s"\'<>]*?(?:fbcdn|cdninstagram|scontent)[^\s"\'<>]*#i', $embedHtml, $mediaMatches);
-                        $mediaUrls = array_unique($mediaMatches[0] ?? []);
-                        foreach ($mediaUrls as $mUrl) {
-                            $cleanMUrl = html_entity_decode(str_replace(['\\/', '&amp;'], ['/', '&'], $mUrl));
-                            if (str_contains($cleanMUrl, '.mp4') && !$videoUrl) {
-                                $videoUrl = $cleanMUrl;
-                            } else if (!str_contains($cleanMUrl, 's150x150') && !str_contains($cleanMUrl, 's320x320') && !$imageUrl) {
-                                $imageUrl = $cleanMUrl;
-                            }
-                        }
-
-                        $finalUrl = $videoUrl ?: $imageUrl;
-                        $isVideo = !empty($videoUrl);
-
-                        if ($finalUrl) {
-                            $posts[] = [
-                                'id' => $code,
-                                'url' => $finalUrl, // MP4 Video URL guaranteed!
-                                'type' => $isVideo ? 'video' : 'image',
-                                'preview' => $imageUrl ?: $finalUrl
-                            ];
-                        }
+            if ($resp->successful()) {
+                $html = $resp->body();
+                preg_match_all('/"(?:shortcode|code)":"([A-Za-z0-9_-]+)"/', $html, $matches1);
+                preg_match_all('/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/', $html, $matches2);
+                
+                $merged = array_merge($matches1[1] ?? [], $matches2[1] ?? []);
+                foreach ($merged as $sc) {
+                    if (!in_array($sc, $shortcodes) && strlen($sc) > 5) {
+                        $shortcodes[] = $sc;
                     }
                 }
+            }
+        }
 
-                if (!empty($posts)) {
-                    return $posts;
+        if (!empty($shortcodes)) {
+            $selected = array_slice($shortcodes, 0, $limit * 2);
+            $posts = [];
+
+            foreach ($selected as $code) {
+                if (count($posts) >= $limit) break;
+
+                $embedUrl = "https://www.instagram.com/p/{$code}/embed/captioned/";
+                $embedResp = Http::timeout(8)->withHeaders([
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                ])->get($embedUrl);
+
+                if ($embedResp->successful()) {
+                    $embedHtml = $embedResp->body();
+                    $videoUrl = null;
+                    $imageUrl = null;
+
+                    if (preg_match('/"video_url"\s*:\s*"([^"]+)"/', $embedHtml, $vMatch)) {
+                        $videoUrl = stripcslashes(html_entity_decode($vMatch[1]));
+                    }
+                    if (preg_match('/"display_url"\s*:\s*"([^"]+)"/', $embedHtml, $iMatch)) {
+                        $imageUrl = stripcslashes(html_entity_decode($iMatch[1]));
+                    }
+
+                    if (!$videoUrl) {
+                        preg_match_all('#https?://[^\s"\'<>]*?(?:fbcdn|cdninstagram|scontent)[^\s"\'<>]*#i', $embedHtml, $mediaMatches);
+                        foreach ($mediaMatches[0] ?? [] as $mUrl) {
+                            $cleanMUrl = html_entity_decode(str_replace(['\\/', '&amp;'], ['/', '&'], $mUrl));
+                            if (str_contains($cleanMUrl, '.mp4')) {
+                                $videoUrl = $cleanMUrl;
+                                break;
+                            }
+                        }
+                    }
+
+                    // MUST CONTAIN VALID .mp4 VIDEO URL
+                    if (!empty($videoUrl)) {
+                        $posts[] = [
+                            'id' => $code,
+                            'url' => $videoUrl, // Guaranteed .mp4 Video
+                            'type' => 'video',
+                            'preview' => $imageUrl ?: $videoUrl
+                        ];
+                    }
                 }
+            }
+
+            if (!empty($posts)) {
+                return $posts;
             }
         }
     } catch (\Exception $e) {}
@@ -392,9 +406,9 @@ Route::post('/api/download', function (Request $request) {
 
     $shortcode = getInstagramShortcode($targetInput);
 
-    // If bulk-fetch request for profile
-    if ($type === 'bulk-fetch') {
-        $bulkPosts = fetchInstagramProfilePostsPHP($rawUsername ?: $targetInput, $limit);
+    // If bulk-video or bulk-fetch request for profile videos
+    if ($type === 'bulk-video' || $type === 'bulk-fetch') {
+        $bulkPosts = fetchInstagramProfileVideosPHP($rawUsername ?: $targetInput, $limit);
         if ($bulkPosts && !empty($bulkPosts)) {
             return response()->json(['posts' => $bulkPosts])->header('Access-Control-Allow-Origin', '*');
         }
@@ -421,7 +435,7 @@ Route::post('/api/download', function (Request $request) {
     }
 
     if ($result) {
-        if ($type === 'bulk-fetch' || $type === 'stories') {
+        if ($type === 'bulk-fetch' || $type === 'bulk-video' || $type === 'stories') {
             $posts = array_map(function ($item, $idx) {
                 return [
                     'id' => 'post_' . $idx . '_' . time(),
