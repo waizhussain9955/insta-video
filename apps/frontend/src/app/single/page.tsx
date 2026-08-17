@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
-import { Download, AlertCircle, Loader2, Sparkles, RefreshCw } from "lucide-react";
+import { Download, AlertCircle, Loader2, Sparkles, RefreshCw, Music } from "lucide-react";
 import { API_BASE_URL } from "../config";
 
 interface MediaItem {
@@ -137,7 +137,7 @@ function SingleDownloaderContent() {
                     <img src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}`} alt="Instagram Media" className="w-full h-full object-cover" />
                   )}
                 </div>
-                <div className="p-4 border-t border-white/5">
+                <div className="p-4 border-t border-white/5 space-y-2">
                   <a
                     href={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}`}
                     download
@@ -146,6 +146,16 @@ function SingleDownloaderContent() {
                     <Download className="h-3.5 w-3.5" />
                     <span>Download Media</span>
                   </a>
+                  {item.type === "video" && (
+                    <a
+                      href={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}&format=mp3`}
+                      download
+                      className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg py-2 text-xs flex items-center justify-center space-x-2 transition"
+                    >
+                      <Music className="h-3.5 w-3.5 text-pink-400" />
+                      <span>Download MP3 (Audio Only)</span>
+                    </a>
+                  )}
                 </div>
               </div>
             ))}

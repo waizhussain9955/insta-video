@@ -60,6 +60,26 @@ export default function StoryDownloader() {
         </p>
       </div>
 
+      {/* Instagram Stories Configuration Notice */}
+      <div className="glass-panel border-amber-500/20 bg-amber-500/5 p-5 rounded-xl mb-8">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0 mt-0.5">
+            <svg className="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-amber-300 mb-1">Instagram Stories Download Mode</h3>
+            <p className="text-xs text-amber-200/70 leading-relaxed">
+              Instagram blocks anonymous access to Stories. To enable Story downloads on this site, please subscribe to the 
+              <strong> 100% FREE ($0/month) plan</strong> of the RapidAPI <em>Instagram Downloader</em> and configure your key 
+              in your server&apos;s <code>.env.local</code> file. Single posts, reels, and carousels can be downloaded 
+              directly without a key using the <a href="/single" className="underline text-amber-300 hover:text-amber-200">Single Downloader</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="glass-panel p-6 rounded-2xl mb-8">
         <div className="flex flex-col sm:flex-row gap-3">
           <input
@@ -118,7 +138,7 @@ export default function StoryDownloader() {
                       <source src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}`} type="video/mp4" />
                     </video>
                   ) : (
-                    <img src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}`} alt="Story content" className="w-full h-full object-cover" />
+                    <img src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}`} alt="" className="w-full h-full object-cover" />
                   )}
                 </div>
                 <div className="p-3 border-t border-white/5 bg-zinc-900/60 backdrop-blur-sm">
