@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
-import { Download, AlertCircle, Loader2, Library, CheckSquare, Square, Film, Image as ImageIcon, Sparkles } from "lucide-react";
+import { Download, AlertCircle, Loader2, Library, CheckSquare, Square, Film, Image as ImageIcon, Music, Play } from "lucide-react";
 import { API_BASE_URL } from "../config";
 import JSZip from "jszip";
 
@@ -49,7 +49,7 @@ export default function BulkDownloader() {
       });
       const fetchedPosts = response.data.posts || [];
       setPosts(fetchedPosts);
-      setSelected(fetchedPosts.map((p: ProfilePost) => p.id)); // Auto-select all by default
+      setSelected(fetchedPosts.map((p: ProfilePost) => p.id));
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to fetch profile posts. Please verify the account is public.");
     } finally {
@@ -105,15 +105,7 @@ export default function BulkDownloader() {
         }
         
         const blob = await response.blob();
-        const contentType = response.headers.get("Content-Type") || "";
-        let extension = "jpg";
-        if (contentType.includes("video/mp4") || item.type === "video") {
-          extension = "mp4";
-        } else if (contentType.includes("image/png")) {
-          extension = "png";
-        } else if (contentType.includes("image/webp")) {
-          extension = "webp";
-        }
+        let extension = item.type === "video" || item.url.includes(".mp4") ? "mp4" : "jpg";
         
         const filename = `${targetUsername}_${i + 1}.${extension}`;
         zip.file(filename, blob);
@@ -123,7 +115,7 @@ export default function BulkDownloader() {
       const downloadUrl = URL.createObjectURL(zipBlob);
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = `${targetUsername}_bulk_downloads_${Date.now()}.zip`;
+      link.download = `${targetUsername}_videos_${Date.now()}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -137,16 +129,16 @@ export default function BulkDownloader() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-16">
+    <div className="mx-auto max-w-6xl px-4 py-16">
       <div className="text-center mb-10">
         <span className="text-xs font-semibold uppercase tracking-wider text-green-400 px-3 py-1 bg-green-400/10 rounded-full">
           Tool #3
         </span>
         <h1 className="text-3xl font-extrabold text-white mt-4 sm:text-5xl">
-          Bulk Profile <span className="text-gradient">ZIP</span> Downloader
+          Bulk Video & Media <span className="text-gradient">Downloader</span>
         </h1>
         <p className="mt-4 text-zinc-400">
-          Enter a profile username, fetch recent posts, pick the ones you want, and save them in a high-speed ZIP.
+          Download individual MP4 videos / MP3 audio directly, or pick multiple items to package into a single ZIP file.
         </p>
       </div>
 
@@ -200,7 +192,7 @@ export default function BulkDownloader() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
-          <p className="text-zinc-400 text-sm">Querying profile and harvesting media nodes...</p>
+          <p className="text-zinc-400 text-sm">Querying profile and harvesting video nodes...</p>
         </div>
       )}
 
@@ -235,52 +227,57 @@ export default function BulkDownloader() {
               ) : (
                 <Download className="h-4 w-4" />
               )}
-              <span>{zipping ? "Packaging ZIP File..." : `Download Selected (${selected.length})`}</span>
+              <span>{zipping ? "Packaging Videos into ZIP..." : `Download Selected as ZIP (${selected.length})`}</span>
             </button>
           </div>
 
           {/* Grid Layout */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {posts.map((post) => {
               const isSel = selected.includes(post.id);
               const isFailed = failedImages[post.id];
               const proxyMediaUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.preview || post.url)}`;
+              const directMediaDownloadUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.url)}`;
+              const directMp3DownloadUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.url)}&format=mp3`;
 
               return (
                 <div
                   key={post.id}
-                  onClick={() => toggleSelect(post.id)}
-                  className={`group relative aspect-square rounded-2xl overflow-hidden cursor-pointer border-2 transition-all duration-300 ${
+                  className={`group relative rounded-2xl overflow-hidden glass-panel border-2 transition-all duration-300 flex flex-col justify-between ${
                     isSel 
-                      ? "border-pink-500 ring-4 ring-pink-500/30 scale-[1.02] shadow-xl shadow-pink-500/20" 
-                      : "border-white/10 hover:border-white/30 hover:scale-[1.01]"
+                      ? "border-pink-500 ring-4 ring-pink-500/30 shadow-xl shadow-pink-500/20" 
+                      : "border-white/10 hover:border-white/30"
                   }`}
                 >
-                  {/* Top HD / Media Type Badges */}
-                  <div className="absolute top-2.5 left-2.5 flex items-center space-x-1 z-10">
-                    <span className="bg-black/75 backdrop-blur-md px-2 py-0.5 rounded-md text-[9px] uppercase font-extrabold text-pink-400 tracking-wider">
-                      HD
-                    </span>
-                    {post.type === "video" && (
-                      <span className="bg-black/75 backdrop-blur-md p-1 rounded-md text-white">
-                        <Film className="h-3 w-3 text-pink-400" />
+                  {/* Thumbnail / Media Box */}
+                  <div 
+                    onClick={() => toggleSelect(post.id)}
+                    className="relative aspect-square w-full bg-zinc-900/80 cursor-pointer overflow-hidden flex items-center justify-center"
+                  >
+                    {/* HD & Video Badges */}
+                    <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5 z-10">
+                      <span className="bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[9px] uppercase font-extrabold text-pink-400 tracking-wider">
+                        HD
                       </span>
-                    )}
-                  </div>
+                      {post.type === "video" && (
+                        <span className="bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[9px] uppercase font-extrabold text-white flex items-center space-x-1">
+                          <Play className="h-2.5 w-2.5 text-pink-400 fill-pink-400" />
+                          <span>MP4 Video</span>
+                        </span>
+                      )}
+                    </div>
 
-                  {/* Top Right Checkbox */}
-                  <div className={`absolute top-2.5 right-2.5 p-1 rounded-lg z-10 transition ${
-                    isSel ? "bg-pink-500 text-white" : "bg-black/60 text-white/70 backdrop-blur-md"
-                  }`}>
-                    {isSel ? (
-                      <CheckSquare className="h-4 w-4 text-white" />
-                    ) : (
-                      <Square className="h-4 w-4" />
-                    )}
-                  </div>
+                    {/* Top Right Selection Checkbox */}
+                    <div className={`absolute top-2.5 right-2.5 p-1 rounded-lg z-10 transition ${
+                      isSel ? "bg-pink-500 text-white" : "bg-black/60 text-white/70 backdrop-blur-md"
+                    }`}>
+                      {isSel ? (
+                        <CheckSquare className="h-4 w-4 text-white" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                    </div>
 
-                  {/* Thumbnail / Image Container */}
-                  <div className="w-full h-full bg-zinc-900/80 flex items-center justify-center relative">
                     {!isFailed ? (
                       <img
                         src={proxyMediaUrl}
@@ -289,24 +286,39 @@ export default function BulkDownloader() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div className="flex flex-col items-center justify-center p-3 text-center">
-                        {post.type === "video" ? (
-                          <Film className="h-8 w-8 text-pink-500 mb-1 opacity-70" />
-                        ) : (
-                          <ImageIcon className="h-8 w-8 text-zinc-500 mb-1 opacity-70" />
-                        )}
-                        <span className="text-[10px] text-zinc-400 font-medium uppercase">
-                          {post.type === "video" ? "Instagram Video" : "Instagram Image"}
+                      <div className="flex flex-col items-center justify-center p-4 text-center">
+                        <Film className="h-10 w-10 text-pink-500 mb-2 opacity-80" />
+                        <span className="text-xs text-zinc-300 font-semibold uppercase">
+                          {post.type === "video" ? "Instagram Video" : "Instagram Post"}
                         </span>
                       </div>
                     )}
                   </div>
 
-                  {/* Bottom Gradient Hover Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                    <span className="text-[10px] font-semibold text-white/90 truncate">
-                      {isSel ? "✓ Selected for ZIP" : "Click to select"}
-                    </span>
+                  {/* Individual Download Buttons Action Footer */}
+                  <div className="p-3 border-t border-white/10 bg-zinc-950/80 backdrop-blur-md flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={directMediaDownloadUrl}
+                        download={`instagram_${post.id}.${post.type === 'video' ? 'mp4' : 'jpg'}`}
+                        className="flex-1 gradient-btn text-white font-semibold rounded-lg py-2 text-xs flex items-center justify-center space-x-1.5 shadow-md hover:brightness-110 transition"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>{post.type === "video" ? "Download MP4" : "Download Photo"}</span>
+                      </a>
+
+                      {post.type === "video" && (
+                        <a
+                          href={directMp3DownloadUrl}
+                          download={`instagram_${post.id}.mp3`}
+                          className="bg-white/10 hover:bg-white/20 text-pink-300 font-semibold rounded-lg px-3 py-2 text-xs flex items-center justify-center space-x-1 transition border border-white/10"
+                          title="Download Audio Only (MP3)"
+                        >
+                          <Music className="h-3.5 w-3.5 text-pink-400" />
+                          <span>MP3</span>
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

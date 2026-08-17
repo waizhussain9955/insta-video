@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import axios from "axios";
-import { Download, AlertCircle, Loader2, PlayCircle, Eye } from "lucide-react";
+import { Download, AlertCircle, Loader2, PlayCircle, Eye, Music, Film, CheckSquare } from "lucide-react";
 import { API_BASE_URL } from "../config";
+import JSZip from "jszip";
 
 interface StoryItem {
   url: string;
@@ -14,6 +15,7 @@ interface StoryItem {
 export default function StoryDownloader() {
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [zipping, setZipping] = useState(false);
   const [error, setError] = useState("");
   const [stories, setStories] = useState<StoryItem[]>([]);
 
@@ -46,38 +48,49 @@ export default function StoryDownloader() {
     }
   };
 
+  const handleDownloadAllZip = async () => {
+    if (stories.length === 0) return;
+    setZipping(true);
+    try {
+      const zip = new JSZip();
+      for (let i = 0; i < stories.length; i++) {
+        const item = stories[i];
+        const proxyUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}`;
+        const res = await fetch(proxyUrl);
+        if (res.ok) {
+          const blob = await res.blob();
+          const ext = item.type === "video" || item.url.includes(".mp4") ? "mp4" : "jpg";
+          zip.file(`story_${i + 1}.${ext}`, blob);
+        }
+      }
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const downloadUrl = URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `${username}_stories_${Date.now()}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+    } catch (err: any) {
+      setError(`Failed to generate Stories ZIP: ${err.message}`);
+    } finally {
+      setZipping(false);
+    }
+  };
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-16">
+    <div className="mx-auto max-w-5xl px-4 py-16">
       <div className="text-center mb-10">
         <span className="text-xs font-semibold uppercase tracking-wider text-secondary px-3 py-1 bg-secondary/10 rounded-full">
           Tool #2
         </span>
         <h1 className="text-3xl font-extrabold text-white mt-4 sm:text-5xl">
-          Instagram <span className="text-gradient">Story</span> Downloader
+          Instagram <span className="text-gradient">Story & MP4</span> Downloader
         </h1>
         <p className="mt-4 text-zinc-400">
-          Download active stories and highlights from public profiles anonymously. Save video or image stories easily.
+          Download active stories and highlights from public profiles anonymously. Save MP4 videos or MP3 audio easily.
         </p>
-      </div>
-
-      {/* Instagram Stories Configuration Notice */}
-      <div className="glass-panel border-amber-500/20 bg-amber-500/5 p-5 rounded-xl mb-8">
-        <div className="flex items-start space-x-3">
-          <div className="flex-shrink-0 mt-0.5">
-            <svg className="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-amber-300 mb-1">Instagram Stories Download Mode</h3>
-            <p className="text-xs text-amber-200/70 leading-relaxed">
-              Instagram blocks anonymous access to Stories. To enable Story downloads on this site, please subscribe to the 
-              <strong> 100% FREE ($0/month) plan</strong> of the RapidAPI <em>Instagram Downloader</em> and configure your key 
-              in your server&apos;s <code>.env.local</code> file. Single posts, reels, and carousels can be downloaded 
-              directly without a key using the <a href="/single" className="underline text-amber-300 hover:text-amber-200">Single Downloader</a>.
-            </p>
-          </div>
-        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="glass-panel p-6 rounded-2xl mb-8">
@@ -115,23 +128,38 @@ export default function StoryDownloader() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="h-10 w-10 text-secondary animate-spin mb-4" />
-          <p className="text-zinc-400 text-sm">Querying active stories from hosted API...</p>
+          <p className="text-zinc-400 text-sm">Querying active stories from API...</p>
         </div>
       )}
 
-      {stories.length > 0 ? (
-        <div className="glass-panel p-6 rounded-2xl">
-          <h2 className="text-lg font-bold text-white mb-6 flex items-center space-x-2">
-            <PlayCircle className="h-5 w-5 text-secondary" />
-            <span>Active Stories ({stories.length})</span>
-          </h2>
+      {stories.length > 0 && (
+        <div className="glass-panel p-6 rounded-2xl animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-white/10">
+            <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+              <PlayCircle className="h-5 w-5 text-secondary" />
+              <span>Active Stories ({stories.length})</span>
+            </h2>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            <button
+              onClick={handleDownloadAllZip}
+              disabled={zipping}
+              className="gradient-btn text-white font-semibold rounded-xl px-6 py-2.5 text-xs flex items-center justify-center space-x-2 disabled:opacity-50"
+            >
+              {zipping ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              <span>{zipping ? "Packaging Stories ZIP..." : "Download All Stories (ZIP)"}</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {stories.map((story, idx) => (
-              <div key={idx} className="glass-panel rounded-xl overflow-hidden relative group">
-                <div className="aspect-[9/16] bg-black/40 relative flex items-center justify-center">
-                  <div className="absolute top-2 left-2 bg-black/70 px-2 py-0.5 rounded text-[9px] uppercase font-bold text-pink-500 tracking-wide z-10">
-                    HD
+              <div key={idx} className="glass-panel rounded-2xl overflow-hidden relative group border border-white/10 flex flex-col justify-between">
+                <div className="aspect-[9/16] bg-black/40 relative flex items-center justify-center overflow-hidden">
+                  <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded text-[9px] uppercase font-bold text-pink-500 tracking-wide z-10">
+                    HD {story.type === "video" ? "MP4 Video" : "Photo"}
                   </div>
                   {story.type === "video" ? (
                     <video controls className="w-full h-full object-cover">
@@ -141,26 +169,36 @@ export default function StoryDownloader() {
                     <img src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}`} alt="" className="w-full h-full object-cover" />
                   )}
                 </div>
-                <div className="p-3 border-t border-white/5 bg-zinc-900/60 backdrop-blur-sm">
-                  <a
-                    href={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}`}
-                    download
-                    className="w-full gradient-btn text-white font-semibold rounded-lg py-2 text-xs flex items-center justify-center space-x-1.5"
-                  >
-                    <Download className="h-3 w-3" />
-                    <span>Download</span>
-                  </a>
+
+                {/* Story Action Buttons */}
+                <div className="p-3 border-t border-white/5 bg-zinc-950/80 backdrop-blur-sm flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}`}
+                      download={`story_${idx + 1}.${story.type === 'video' ? 'mp4' : 'jpg'}`}
+                      className="flex-1 gradient-btn text-white font-semibold rounded-lg py-2 text-xs flex items-center justify-center space-x-1.5 shadow-md"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      <span>{story.type === "video" ? "Download MP4" : "Download Photo"}</span>
+                    </a>
+
+                    {story.type === "video" && (
+                      <a
+                        href={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}&format=mp3`}
+                        download={`story_${idx + 1}.mp3`}
+                        className="bg-white/10 hover:bg-white/20 text-pink-300 font-semibold rounded-lg px-2.5 py-2 text-xs flex items-center justify-center space-x-1 transition"
+                        title="Download Audio Only (MP3)"
+                      >
+                        <Music className="h-3.5 w-3.5 text-pink-400" />
+                        <span>MP3</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
-      ) : (
-        !loading && username && (
-          <div className="text-center py-10 text-zinc-500">
-            No active stories found for this profile.
-          </div>
-        )
       )}
     </div>
   );

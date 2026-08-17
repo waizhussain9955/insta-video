@@ -8,7 +8,7 @@ Route::get('/', function () {
     return response()->json([
         'status' => 'online',
         'service' => 'Instagram Media Downloader API',
-        'version' => '1.2.0',
+        'version' => '1.3.0',
         'endpoints' => [
             'POST /api/download' => 'Fetch Instagram media metadata (Reels, Videos, Stories, Bulk)',
             'GET /api/proxy' => 'Proxy media stream bypassing Instagram CDN CORS'
@@ -188,7 +188,7 @@ function fetchSnapSaveMediaPHP($targetUrl) {
     return null;
 }
 
-// ===== ENGINE 3: PROFILE POSTS SCRAPER =====
+// ===== ENGINE 3: PROFILE POSTS SCRAPER WITH GUARANTEED MP4 VIDEO LINKS =====
 function fetchInstagramProfilePostsPHP($username, $limit = 12) {
     try {
         $cleanUsername = trim(str_replace(['https://', 'http://', 'www.instagram.com/', 'instagram.com/', '/', '@'], '', $username));
@@ -215,20 +215,38 @@ function fetchInstagramProfilePostsPHP($username, $limit = 12) {
 
                     if ($embedResp->successful()) {
                         $embedHtml = $embedResp->body();
+                        
+                        $videoUrl = null;
+                        $imageUrl = null;
+
+                        if (preg_match('/"video_url"\s*:\s*"([^"]+)"/', $embedHtml, $vMatch)) {
+                            $videoUrl = stripcslashes(html_entity_decode($vMatch[1]));
+                        }
+                        if (preg_match('/"display_url"\s*:\s*"([^"]+)"/', $embedHtml, $iMatch)) {
+                            $imageUrl = stripcslashes(html_entity_decode($iMatch[1]));
+                        }
+
                         preg_match_all('#https?://[^\s"\'<>]*?(?:fbcdn|cdninstagram|scontent)[^\s"\'<>]*#i', $embedHtml, $mediaMatches);
                         $mediaUrls = array_unique($mediaMatches[0] ?? []);
                         foreach ($mediaUrls as $mUrl) {
                             $cleanMUrl = html_entity_decode(str_replace(['\\/', '&amp;'], ['/', '&'], $mUrl));
-                            if (!str_contains($cleanMUrl, 's150x150') && !str_contains($cleanMUrl, 's320x320')) {
-                                $isVideo = str_contains($cleanMUrl, '.mp4');
-                                $posts[] = [
-                                    'id' => $code,
-                                    'url' => $cleanMUrl,
-                                    'type' => $isVideo ? 'video' : 'image',
-                                    'preview' => $cleanMUrl
-                                ];
-                                break;
+                            if (str_contains($cleanMUrl, '.mp4') && !$videoUrl) {
+                                $videoUrl = $cleanMUrl;
+                            } else if (!str_contains($cleanMUrl, 's150x150') && !str_contains($cleanMUrl, 's320x320') && !$imageUrl) {
+                                $imageUrl = $cleanMUrl;
                             }
+                        }
+
+                        $finalUrl = $videoUrl ?: $imageUrl;
+                        $isVideo = !empty($videoUrl);
+
+                        if ($finalUrl) {
+                            $posts[] = [
+                                'id' => $code,
+                                'url' => $finalUrl, // MP4 Video URL guaranteed!
+                                'type' => $isVideo ? 'video' : 'image',
+                                'preview' => $imageUrl ?: $finalUrl
+                            ];
                         }
                     }
                 }
@@ -252,25 +270,46 @@ function fetchInstagramEmbedHTML($shortcode) {
 
         if ($response->successful()) {
             $html = $response->body();
+            
+            $videoUrl = null;
+            $imageUrl = null;
+
+            if (preg_match('/"video_url"\s*:\s*"([^"]+)"/', $html, $vMatch)) {
+                $videoUrl = stripcslashes(html_entity_decode($vMatch[1]));
+            }
+            if (preg_match('/"display_url"\s*:\s*"([^"]+)"/', $html, $iMatch)) {
+                $imageUrl = stripcslashes(html_entity_decode($iMatch[1]));
+            }
+
             preg_match_all('#https?://[^\s"\'<>]*?(?:fbcdn|cdninstagram|scontent)[^\s"\'<>]*#i', $html, $matches);
             $rawUrls = array_unique($matches[0] ?? []);
             $media = [];
             foreach ($rawUrls as $u) {
                 $cleanUrl = html_entity_decode(str_replace(['\\/', '&amp;'], ['/', '&'], $u));
                 if (!str_contains($cleanUrl, 's150x150') && !str_contains($cleanUrl, 's320x320')) {
-                    $media[] = [
-                        'url' => $cleanUrl,
-                        'type' => str_contains($cleanUrl, '.mp4') ? 'video' : 'image'
-                    ];
+                    if (str_contains($cleanUrl, '.mp4') && !$videoUrl) {
+                        $videoUrl = $cleanUrl;
+                    } else if (!$imageUrl) {
+                        $imageUrl = $cleanUrl;
+                    }
                 }
             }
-            if (!empty($media)) {
+
+            $finalUrl = $videoUrl ?: $imageUrl;
+            $isVideo = !empty($videoUrl);
+
+            if ($finalUrl) {
                 return [
                     'success' => true,
                     'owner' => 'instagram_user',
                     'caption' => '',
-                    'media_type' => count($media) > 1 ? 'carousel' : $media[0]['type'],
-                    'media' => array_values($media)
+                    'media_type' => $isVideo ? 'video' : 'image',
+                    'media' => [
+                        [
+                            'url' => $finalUrl,
+                            'type' => $isVideo ? 'video' : 'image'
+                        ]
+                    ]
                 ];
             }
         }
