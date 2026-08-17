@@ -97,7 +97,7 @@ export default function BulkVideoDownloader() {
 
       for (let i = 0; i < selectedPosts.length; i++) {
         const item = selectedPosts[i];
-        const proxyUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}`;
+        const proxyUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}&type=video`;
         
         const response = await fetch(proxyUrl);
         if (!response.ok) {
@@ -236,7 +236,7 @@ export default function BulkVideoDownloader() {
               const isSel = selected.includes(post.id);
               const isFailed = failedImages[post.id];
               const proxyMediaUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.preview || post.url)}`;
-              const directMediaDownloadUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.url)}`;
+              const directMediaDownloadUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.url)}&type=video`;
               const directMp3DownloadUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.url)}&format=mp3`;
 
               return (

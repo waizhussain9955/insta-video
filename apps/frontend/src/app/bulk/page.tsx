@@ -237,7 +237,7 @@ export default function BulkDownloader() {
               const isSel = selected.includes(post.id);
               const isFailed = failedImages[post.id];
               const proxyMediaUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.preview || post.url)}`;
-              const directMediaDownloadUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.url)}`;
+              const directMediaDownloadUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.url)}${post.type === 'video' ? '&type=video' : ''}`;
               const directMp3DownloadUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.url)}&format=mp3`;
 
               return (
