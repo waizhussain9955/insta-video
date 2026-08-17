@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
-import { Download, AlertCircle, Loader2, PlayCircle, Eye, Music, Film, CheckSquare } from "lucide-react";
+import { Download, AlertCircle, Loader2, PlayCircle, Eye, Music, Film, Play } from "lucide-react";
 import { API_BASE_URL } from "../config";
 import JSZip from "jszip";
 
@@ -42,7 +42,7 @@ export default function StoryDownloader() {
       });
       setStories(response.data.stories || []);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to fetch stories. Please verify username or proxy settings.");
+      setError(err.response?.data?.error || "Failed to fetch stories. Please verify username is public.");
     } finally {
       setLoading(false);
     }
@@ -55,11 +55,12 @@ export default function StoryDownloader() {
       const zip = new JSZip();
       for (let i = 0; i < stories.length; i++) {
         const item = stories[i];
-        const proxyUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}`;
+        const isVideo = item.type === "video" || item.url.includes(".mp4") || item.url.includes("/t50.");
+        const proxyUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}${isVideo ? '&type=video' : ''}`;
         const res = await fetch(proxyUrl);
         if (res.ok) {
           const blob = await res.blob();
-          const ext = item.type === "video" || item.url.includes(".mp4") ? "mp4" : "jpg";
+          const ext = isVideo ? "mp4" : "jpg";
           zip.file(`story_${i + 1}.${ext}`, blob);
         }
       }
@@ -86,7 +87,7 @@ export default function StoryDownloader() {
           Tool #2
         </span>
         <h1 className="text-3xl font-extrabold text-white mt-4 sm:text-5xl">
-          Instagram <span className="text-gradient">Story & MP4</span> Downloader
+          Instagram <span className="text-gradient">Story & Video</span> Downloader
         </h1>
         <p className="mt-4 text-zinc-400">
           Download active stories and highlights from public profiles anonymously. Save MP4 videos or MP3 audio easily.
@@ -128,7 +129,7 @@ export default function StoryDownloader() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="h-10 w-10 text-secondary animate-spin mb-4" />
-          <p className="text-zinc-400 text-sm">Querying active stories from API...</p>
+          <p className="text-zinc-400 text-sm">Querying active video stories from API...</p>
         </div>
       )}
 
@@ -155,48 +156,63 @@ export default function StoryDownloader() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stories.map((story, idx) => (
-              <div key={idx} className="glass-panel rounded-2xl overflow-hidden relative group border border-white/10 flex flex-col justify-between">
-                <div className="aspect-[9/16] bg-black/40 relative flex items-center justify-center overflow-hidden">
-                  <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded text-[9px] uppercase font-bold text-pink-500 tracking-wide z-10">
-                    HD {story.type === "video" ? "MP4 Video" : "Photo"}
-                  </div>
-                  {story.type === "video" ? (
-                    <video controls className="w-full h-full object-cover">
-                      <source src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}`} type="video/mp4" />
-                    </video>
-                  ) : (
-                    <img src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}`} alt="" className="w-full h-full object-cover" />
-                  )}
-                </div>
+            {stories.map((story, idx) => {
+              const isVideo = story.type === "video" || story.url.includes(".mp4") || story.url.includes("/t50.");
+              const proxyVideoUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}&type=video`;
+              const proxyImageUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}`;
+              const proxyMp3Url = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}&format=mp3`;
 
-                {/* Story Action Buttons */}
-                <div className="p-3 border-t border-white/5 bg-zinc-950/80 backdrop-blur-sm flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}`}
-                      download={`story_${idx + 1}.${story.type === 'video' ? 'mp4' : 'jpg'}`}
-                      className="flex-1 gradient-btn text-white font-semibold rounded-lg py-2 text-xs flex items-center justify-center space-x-1.5 shadow-md"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      <span>{story.type === "video" ? "Download MP4" : "Download Photo"}</span>
-                    </a>
+              return (
+                <div key={idx} className="glass-panel rounded-2xl overflow-hidden relative group border border-white/10 flex flex-col justify-between">
+                  <div className="aspect-[9/16] bg-black/40 relative flex items-center justify-center overflow-hidden">
+                    <div className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[9px] uppercase font-extrabold text-pink-400 tracking-wider z-10 flex items-center space-x-1">
+                      {isVideo ? (
+                        <>
+                          <Play className="h-2.5 w-2.5 text-pink-400 fill-pink-400" />
+                          <span>HD MP4 Video</span>
+                        </>
+                      ) : (
+                        <span>HD Photo</span>
+                      )}
+                    </div>
 
-                    {story.type === "video" && (
-                      <a
-                        href={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}&format=mp3`}
-                        download={`story_${idx + 1}.mp3`}
-                        className="bg-white/10 hover:bg-white/20 text-pink-300 font-semibold rounded-lg px-2.5 py-2 text-xs flex items-center justify-center space-x-1 transition"
-                        title="Download Audio Only (MP3)"
-                      >
-                        <Music className="h-3.5 w-3.5 text-pink-400" />
-                        <span>MP3</span>
-                      </a>
+                    {isVideo ? (
+                      <video controls className="w-full h-full object-cover">
+                        <source src={proxyVideoUrl} type="video/mp4" />
+                      </video>
+                    ) : (
+                      <img src={proxyImageUrl} alt="" className="w-full h-full object-cover" />
                     )}
                   </div>
+
+                  {/* Action Buttons */}
+                  <div className="p-3 border-t border-white/10 bg-zinc-950/80 backdrop-blur-sm flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={isVideo ? proxyVideoUrl : proxyImageUrl}
+                        download={`story_${idx + 1}.${isVideo ? 'mp4' : 'jpg'}`}
+                        className="flex-1 gradient-btn text-white font-semibold rounded-lg py-2 text-xs flex items-center justify-center space-x-1.5 shadow-md hover:brightness-110 transition"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>{isVideo ? "Download MP4" : "Download Photo"}</span>
+                      </a>
+
+                      {isVideo && (
+                        <a
+                          href={proxyMp3Url}
+                          download={`story_${idx + 1}.mp3`}
+                          className="bg-white/10 hover:bg-white/20 text-pink-300 font-semibold rounded-lg px-2.5 py-2 text-xs flex items-center justify-center space-x-1 transition border border-white/10"
+                          title="Download Audio Only (MP3)"
+                        >
+                          <Music className="h-3.5 w-3.5 text-pink-400" />
+                          <span>MP3</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
