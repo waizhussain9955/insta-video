@@ -2,6 +2,12 @@ import axios from "axios";
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.thecalicocats.com';
 
+export function getProxyUrl(url: string, format: string = ''): string {
+  const base = (API_BASE_URL && API_BASE_URL.trim() !== '') ? API_BASE_URL.replace(/\/$/, '') : '';
+  const fmt = format ? `&format=${encodeURIComponent(format)}` : '';
+  return `${base}/api/proxy?url=${encodeURIComponent(url)}${fmt}`;
+}
+
 export async function requestDownloaderApi(payload: any) {
   let lastError: any = null;
 

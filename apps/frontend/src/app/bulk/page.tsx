@@ -3,7 +3,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { Download, AlertCircle, Loader2, Library, CheckSquare, Square, Film, Music, Play, Sparkles } from "lucide-react";
-import { API_BASE_URL, requestDownloaderApi } from "../config";
+import { API_BASE_URL, getProxyUrl, requestDownloaderApi } from "../config";
 import JSZip from "jszip";
 
 interface ProfileVideo {
@@ -245,9 +245,9 @@ export default function BulkVideoDownloader() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {validPosts.map((post) => {
               const isSel = selected.includes(post.id);
-              const proxyMediaUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.preview || post.url)}`;
-              const directMediaDownloadUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.url)}&type=video`;
-              const directMp3DownloadUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.url)}&format=mp3`;
+              const proxyMediaUrl = getProxyUrl(post.preview || post.url);
+              const directMediaDownloadUrl = getProxyUrl(post.url);
+              const directMp3DownloadUrl = getProxyUrl(post.url, "mp3");
 
               return (
                 <div

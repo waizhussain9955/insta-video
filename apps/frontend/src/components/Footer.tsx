@@ -10,12 +10,12 @@ export default function Footer() {
               <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
                 <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
               </svg>
               <span className="text-xl font-bold text-white">InstaSave</span>
             </div>
             <p className="text-sm text-zinc-400">
-              The ultimate high-speed Instagram downloader for reels, photos, stories, and profiles. No limits, completely free.
+              The ultimate high-speed Instagram downloader for reels, MP3 audio, photos, stories, and profiles. No limits, completely free.
             </p>
           </div>
           <div className="mt-12 grid grid-cols-2 gap-8 xl:col-span-2 xl:mt-0">
@@ -25,7 +25,12 @@ export default function Footer() {
                 <ul role="list" className="mt-4 space-y-4">
                   <li>
                     <Link href="/single" className="text-sm text-zinc-400 hover:text-white transition">
-                      Single Downloader
+                      Reel & Video Downloader
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/audio" className="text-sm text-zinc-400 hover:text-white transition">
+                      MP3 Audio Downloader
                     </Link>
                   </li>
                   <li>
@@ -35,7 +40,7 @@ export default function Footer() {
                   </li>
                   <li>
                     <Link href="/bulk" className="text-sm text-zinc-400 hover:text-white transition">
-                      Bulk Downloader
+                      Bulk Profile Downloader
                     </Link>
                   </li>
                 </ul>

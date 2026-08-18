@@ -3,7 +3,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { Download, AlertCircle, Loader2, PlayCircle, Eye, Music, Film, Play, Image as ImageIcon, Layers } from "lucide-react";
-import { API_BASE_URL, requestDownloaderApi } from "../config";
+import { API_BASE_URL, getProxyUrl, requestDownloaderApi } from "../config";
 import JSZip from "jszip";
 
 interface StoryItem {
@@ -89,7 +89,7 @@ export default function StoryDownloader() {
         const item = filteredStories[i];
         const origIdx = stories.indexOf(item);
         const isVideo = videoState[origIdx] || item.type === "video" || item.url.includes(".mp4") || item.url.includes("/t50.");
-        const proxyUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}${isVideo ? '&type=video' : ''}`;
+        const proxyUrl = getProxyUrl(item.url);
         const res = await fetch(proxyUrl);
         if (res.ok) {
           const blob = await res.blob();
@@ -220,9 +220,9 @@ export default function StoryDownloader() {
             {filteredStories.map((story, fIdx) => {
               const origIdx = stories.indexOf(story);
               const isVideo = videoState[origIdx] || story.type === "video" || story.url.includes(".mp4") || story.url.includes("/t50.");
-              const proxyVideoUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}&type=video`;
-              const proxyImageUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.preview || story.url)}`;
-              const proxyMp3Url = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}&format=mp3`;
+              const proxyVideoUrl = getProxyUrl(story.url);
+              const proxyImageUrl = getProxyUrl(story.preview || story.url);
+              const proxyMp3Url = getProxyUrl(story.url, "mp3");
 
               return (
                 <div key={fIdx} className="glass-panel rounded-2xl overflow-hidden relative group border border-white/10 flex flex-col justify-between">

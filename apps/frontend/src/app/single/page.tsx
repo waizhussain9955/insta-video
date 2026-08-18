@@ -2,12 +2,12 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import axios from "axios";
-import { Download, AlertCircle, Loader2, Sparkles, RefreshCw, Music } from "lucide-react";
-import { API_BASE_URL, requestDownloaderApi } from "../config";
+import { Download, AlertCircle, Loader2, Sparkles, Music, Film, CheckCircle2 } from "lucide-react";
+import { getProxyUrl, requestDownloaderApi } from "../config";
 
 interface MediaItem {
   url: string;
+  video_url?: string;
   type: string;
 }
 
@@ -63,17 +63,17 @@ function SingleDownloaderContent() {
     <div className="mx-auto max-w-4xl px-4 py-16">
       <div className="text-center mb-10">
         <span className="text-xs font-semibold uppercase tracking-wider text-primary px-3 py-1 bg-primary/10 rounded-full">
-          Tool #1
+          Reels & Video Tool
         </span>
         <h1 className="text-3xl font-extrabold text-white mt-4 sm:text-5xl">
           Instagram <span className="text-gradient">Reels & Post</span> Downloader
         </h1>
         <p className="mt-4 text-zinc-400">
-          Save Reels, Videos, Photos, and Carousel slides. Download files anonymously through our secure proxy.
+          Save Reels, Videos, Photos, and Carousel slides. Download in HD MP4 or extract 320kbps MP3 Audio.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="glass-panel p-6 rounded-2xl mb-8">
+      <form onSubmit={handleSubmit} className="glass-panel p-6 rounded-2xl mb-8 border border-white/10 shadow-2xl">
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
@@ -108,12 +108,12 @@ function SingleDownloaderContent() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
-          <p className="text-zinc-400 text-sm">Extracting media details from hosted API...</p>
+          <p className="text-zinc-400 text-sm">Extracting media and audio tracks...</p>
         </div>
       )}
 
       {result && result.success && (
-        <div className="glass-panel p-6 rounded-2xl animate-fade-in">
+        <div className="glass-panel p-6 rounded-2xl animate-fade-in border border-white/10">
           <div className="flex items-center space-x-3 mb-6">
             <Sparkles className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-bold text-white">Media Found!</h2>
@@ -123,42 +123,49 @@ function SingleDownloaderContent() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {result.media.map((item, idx) => (
-              <div key={idx} className="glass-panel rounded-xl overflow-hidden group relative">
-                <div className="aspect-square bg-black/40 relative flex items-center justify-center">
-                  <div className="absolute top-3 left-3 bg-black/75 px-2 py-0.5 rounded text-[10px] uppercase font-bold text-pink-500 tracking-wide z-10">
-                    HD Quality
+            {result.media.map((item, idx) => {
+              const mediaUrl = item.video_url || item.url;
+              const isVideo = item.type === "video" || (mediaUrl && mediaUrl.includes(".mp4"));
+              const proxyDownloadUrl = getProxyUrl(mediaUrl);
+              const proxyAudioUrl = getProxyUrl(mediaUrl, "mp3");
+
+              return (
+                <div key={idx} className="glass-panel rounded-xl overflow-hidden group relative border border-white/5 bg-zinc-900/60">
+                  <div className="aspect-square bg-black/40 relative flex items-center justify-center">
+                    <div className="absolute top-3 left-3 bg-black/75 px-2.5 py-1 rounded-md text-[10px] uppercase font-bold text-pink-400 tracking-wide z-10">
+                      HD Quality
+                    </div>
+                    {isVideo ? (
+                      <video controls playsInline className="w-full h-full object-contain">
+                        <source src={proxyDownloadUrl} type="video/mp4" />
+                      </video>
+                    ) : (
+                      <img src={proxyDownloadUrl} alt="Instagram Media" className="w-full h-full object-cover" />
+                    )}
                   </div>
-                  {item.type === "video" ? (
-                    <video controls className="w-full h-full object-cover">
-                      <source src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}`} type="video/mp4" />
-                    </video>
-                  ) : (
-                    <img src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}`} alt="Instagram Media" className="w-full h-full object-cover" />
-                  )}
-                </div>
-                <div className="p-4 border-t border-white/5 space-y-2">
-                  <a
-                    href={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}`}
-                    download
-                    className="w-full gradient-btn text-white font-semibold rounded-lg py-2.5 text-xs flex items-center justify-center space-x-2"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    <span>Download Media</span>
-                  </a>
-                  {item.type === "video" && (
+                  <div className="p-4 border-t border-white/5 space-y-2.5">
                     <a
-                      href={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}&format=mp3`}
-                      download
-                      className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg py-2 text-xs flex items-center justify-center space-x-2 transition"
+                      href={proxyDownloadUrl}
+                      download={`instagram_${isVideo ? "video" : "photo"}_${idx + 1}.${isVideo ? "mp4" : "jpg"}`}
+                      className="w-full gradient-btn text-white font-semibold rounded-lg py-2.5 text-xs flex items-center justify-center space-x-2 shadow-md shadow-pink-500/20"
                     >
-                      <Music className="h-3.5 w-3.5 text-pink-400" />
-                      <span>Download MP3 (Audio Only)</span>
+                      <Download className="h-3.5 w-3.5" />
+                      <span>Download {isVideo ? "HD Video (MP4)" : "HD Photo"}</span>
                     </a>
-                  )}
+                    {isVideo && (
+                      <a
+                        href={proxyAudioUrl}
+                        download={`instagram_audio_${idx + 1}.mp3`}
+                        className="w-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/30 text-cyan-300 font-semibold rounded-lg py-2.5 text-xs flex items-center justify-center space-x-2 transition"
+                      >
+                        <Music className="h-3.5 w-3.5 text-cyan-400" />
+                        <span>Download MP3 Audio (320kbps)</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {result.caption && (

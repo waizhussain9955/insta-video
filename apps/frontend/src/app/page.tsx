@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Download, Film, Image, Layers, PlayCircle, ShieldCheck, Zap } from "lucide-react";
+import { Download, Film, Image, Layers, PlayCircle, ShieldCheck, Zap, Music, Headphones } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -24,10 +24,10 @@ export default function Home() {
       href: "/single"
     },
     {
-      icon: <Image className="h-6 w-6 text-secondary" />,
-      title: "Photos & Carousels",
-      desc: "Save single images or full slide carousel posts.",
-      href: "/single"
+      icon: <Music className="h-6 w-6 text-cyan-400" />,
+      title: "MP3 Audio Downloader",
+      desc: "Extract high-quality 320kbps MP3 audio soundtracks from Reels.",
+      href: "/audio"
     },
     {
       icon: <PlayCircle className="h-6 w-6 text-accent" />,
@@ -50,17 +50,17 @@ export default function Home() {
         <div className="mx-auto max-w-4xl px-4 text-center z-10">
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl text-white">
             Premium Instagram <br />
-            <span className="text-gradient">Media Downloader</span>
+            <span className="text-gradient">Media & Audio Downloader</span>
           </h1>
           <p className="mt-6 text-lg text-zinc-400 max-w-2xl mx-auto">
-            High-speed, completely free, and anonymous downloading. Save Reels, photos, stories, and entire profiles instantly without third-party API restrictions.
+            High-speed, completely free, and anonymous downloading. Save Reels, MP3 audio, stories, and entire profiles instantly with zero quality loss.
           </p>
 
           {/* Quick Input Bar */}
           <form onSubmit={handleSearch} className="mt-10 max-w-2xl mx-auto flex flex-col sm:flex-row gap-3">
             <input
               type="text"
-              placeholder="Paste Instagram link here (e.g. https://www.instagram.com/p/C_...)"
+              placeholder="Paste Instagram link here (e.g. https://www.instagram.com/reel/...)"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               className="flex-grow glass-input text-white rounded-xl px-5 py-4 text-sm"
@@ -82,10 +82,10 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Supports All Media Types
+              Supports All Media & Audio Types
             </h2>
             <p className="mt-4 text-zinc-400">
-              Download anything from Instagram directly to your device without quality loss.
+              Download Reels, MP4 Videos, 320kbps MP3 Audio, and Stories directly to your device.
             </p>
           </div>
 
@@ -123,7 +123,7 @@ export default function Home() {
             <Zap className="h-10 w-10 text-primary mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">Ultra Fast Downloads</h3>
             <p className="text-sm text-zinc-400">
-              High-concurrency FastAPI backend processes media extractions and downloads in fractions of a second.
+              High-concurrency backend processes media extractions and MP3 conversions in milliseconds.
             </p>
           </div>
           <div className="glass-panel p-8 rounded-2xl text-center flex flex-col items-center">
@@ -134,10 +134,10 @@ export default function Home() {
             </p>
           </div>
           <div className="glass-panel p-8 rounded-2xl text-center flex flex-col items-center">
-            <Download className="h-10 w-10 text-accent mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">No Registration Required</h3>
+            <Headphones className="h-10 w-10 text-cyan-400 mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">Crystal Clear 320kbps MP3</h3>
             <p className="text-sm text-zinc-400">
-              Free to use indefinitely. No account creation, login, or personal details requested.
+              Extract high-bitrate studio audio soundtracks directly from any reel or video with 1 click.
             </p>
           </div>
         </div>
