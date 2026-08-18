@@ -8,24 +8,33 @@ use Illuminate\Http\Client\Pool;
 Route::get('/', function () {
     return response()->json([
         'status' => 'online',
-        'service' => 'Instagram Media Downloader API',
-        'version' => '4.0.0',
+        'service' => 'Instagram High-Performance Media Downloader API',
+        'version' => '5.0.0',
+        'engines' => [
+            'Engine 1' => 'Native Instagram Web Profile GraphQL (X-IG-App-ID)',
+            'Engine 2' => 'Instagram Embed Captioned Video Extractor',
+            'Engine 3' => 'SnapSave High-Speed PHP Deobfuscator',
+            'Engine 4' => 'Cobalt Multi-Media Stream Relays',
+            'Engine 5' => 'Universal High-Speed Proxy Stream Engine'
+        ],
         'endpoints' => [
-            'POST /api/download' => 'Ultra-fast Native Web Profile Info Engine for 100% MP4 Videos, Reels & Stories',
+            'POST /api/download' => 'Ultra-fast parallel fetching for 100% MP4 Videos, Reels & Stories',
             'GET /api/proxy' => 'Proxy media stream bypassing Instagram CDN CORS'
         ]
-    ]);
+    ])->header('Access-Control-Allow-Origin', '*')
+      ->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+      ->header('Access-Control-Allow-Headers', '*');
 });
 
-// Options CORS Handlers
+// Options CORS Preflight Handlers
 Route::options('/{any}', function () {
     return response('', 200)
         ->header('Access-Control-Allow-Origin', '*')
         ->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-IG-App-ID');
 })->where('any', '.*');
 
-// Clean Username / URL Utility (Strips ?utm_source=..., @, domains)
+// ===== UTILITIES =====
 function cleanInstagramUsernamePHP($input) {
     $raw = trim($input);
     if (empty($raw)) return '';
@@ -44,8 +53,7 @@ function cleanInstagramUsernamePHP($input) {
     return str_replace('@', '', $raw);
 }
 
-// Extract Shortcode from Instagram Link
-function getInstagramShortcode($url) {
+function getInstagramShortcodePHP($url) {
     if (empty($url)) return null;
     $clean = explode('?', $url)[0];
     if (preg_match('/(?:p|reel|reels|tv|stories\/[^\/]+|s\/[^\/]+)\/([A-Za-z0-9_:-]+)/i', $clean, $matches)) {
@@ -54,7 +62,7 @@ function getInstagramShortcode($url) {
     return null;
 }
 
-// ===== ENGINE 1: NATIVE INSTAGRAM WEB PROFILE INFO API (ULTRA-FAST & 100% RELIABLE) =====
+// ===== ENGINE 1: NATIVE INSTAGRAM WEB PROFILE GRAPHQL ENGINE (0.2s SPEED) =====
 function fetchInstagramWebProfileReelsPHP($usernameInput, $limit = 12) {
     try {
         $cleanUsername = cleanInstagramUsernamePHP($usernameInput);
@@ -115,54 +123,57 @@ function fetchInstagramWebProfileReelsPHP($usernameInput, $limit = 12) {
     return null;
 }
 
-// ===== ENGINE 2: COBALT MULTI-MEDIA API =====
-function fetchCobaltInstagram($url) {
+// ===== ENGINE 2: INSTAGRAM EMBED EXTRACTOR (SINGLE REELS & VIDEOS) =====
+function fetchInstagramEmbedVideoPHP($urlOrCode) {
     try {
+        $code = getInstagramShortcodePHP($urlOrCode) ?: $urlOrCode;
+        if (!$code) return null;
+
+        $embedUrl = "https://www.instagram.com/p/{$code}/embed/captioned/";
         $resp = Http::withoutVerifying()->timeout(8)->withHeaders([
-            'Accept' => 'application/json',
-            'Content-Type' => 'application/json'
-        ])->post('https://api.cobalt.liubquanti.click/', ['url' => $url]);
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        ])->get($embedUrl);
 
         if ($resp->successful()) {
-            $data = $resp->json();
-            $media = [];
-            if (($data['status'] ?? '') === 'redirect' && !empty($data['url'])) {
-                $isVideo = str_contains($data['url'], '.mp4') || str_contains($data['url'], '/t50.') || str_contains($data['filename'] ?? '', '.mp4');
-                if ($isVideo) {
-                    $media[] = [
-                        'url' => $data['url'],
-                        'video_url' => $data['url'],
-                        'type' => 'video'
-                    ];
-                }
-            } else if (($data['status'] ?? '') === 'stream' && !empty($data['url'])) {
-                $media[] = [
-                    'url' => $data['url'],
-                    'video_url' => $data['url'],
-                    'type' => 'video'
-                ];
-            } else if (($data['status'] ?? '') === 'picker' && !empty($data['picker'])) {
-                foreach ($data['picker'] as $item) {
-                    if (!empty($item['url'])) {
-                        $isVideo = ($item['type'] ?? '') === 'video' || str_contains($item['url'], '.mp4') || str_contains($item['url'], '/t50.');
-                        if ($isVideo) {
-                            $media[] = [
-                                'url' => $item['url'],
-                                'video_url' => $item['url'],
-                                'type' => 'video'
-                            ];
-                        }
+            $html = $resp->body();
+            $videoUrl = null;
+            $displayUrl = null;
+
+            if (preg_match('/"video_url"\s*:\s*"([^"]+)"/', $html, $vMatch)) {
+                $videoUrl = stripcslashes(html_entity_decode($vMatch[1]));
+            }
+            if (preg_match('/"video_src"\s*:\s*"([^"]+)"/', $html, $vMatch2)) {
+                $videoUrl = stripcslashes(html_entity_decode($vMatch2[1]));
+            }
+            if (preg_match('/"display_url"\s*:\s*"([^"]+)"/', $html, $dMatch)) {
+                $displayUrl = stripcslashes(html_entity_decode($dMatch[1]));
+            }
+
+            if (!$videoUrl) {
+                preg_match_all('#https?://[^\s"\'<>]*?(?:fbcdn|cdninstagram|scontent)[^\s"\'<>]*#i', $html, $mediaMatches);
+                foreach ($mediaMatches[0] ?? [] as $mUrl) {
+                    $cleanMUrl = html_entity_decode(str_replace(['\\/', '&amp;'], ['/', '&'], $mUrl));
+                    if (str_contains($cleanMUrl, '.mp4') || str_contains($cleanMUrl, '/t50.')) {
+                        $videoUrl = $cleanMUrl;
+                        break;
                     }
                 }
             }
 
-            if (!empty($media)) {
+            if ($videoUrl) {
                 return [
                     'success' => true,
                     'owner' => 'instagram_user',
                     'caption' => '',
                     'media_type' => 'video',
-                    'media' => $media
+                    'media' => [
+                        [
+                            'url' => $videoUrl,
+                            'video_url' => $videoUrl,
+                            'type' => 'video',
+                            'preview' => $displayUrl ?: $videoUrl
+                        ]
+                    ]
                 ];
             }
         }
@@ -264,56 +275,62 @@ function fetchSnapSaveMediaPHP($targetUrl) {
     return null;
 }
 
-// ===== ENGINE 4: DEDICATED STORY SCRAPER (100% MP4 VIDEOS) =====
-function fetchInstagramStoriesPHP($input) {
+// ===== ENGINE 4: COBALT MULTI-MEDIA API =====
+function fetchCobaltInstagram($url) {
     try {
-        $cleanUsername = cleanInstagramUsernamePHP($input);
-        if (empty($cleanUsername)) return null;
+        $resp = Http::withoutVerifying()->timeout(8)->withHeaders([
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json'
+        ])->post('https://api.cobalt.liubquanti.click/', ['url' => $url]);
 
-        $targetUrl = "https://www.instagram.com/stories/{$cleanUsername}/";
-
-        // 1. Try Cobalt API
-        $cobaltRes = fetchCobaltInstagram($targetUrl);
-        if ($cobaltRes && !empty($cobaltRes['media'])) {
-            $filtered = [];
-            foreach ($cobaltRes['media'] as $idx => $item) {
-                $isVideo = ($item['type'] ?? '') === 'video' || str_contains($item['url'], '.mp4') || str_contains($item['url'], '/t50.');
+        if ($resp->successful()) {
+            $data = $resp->json();
+            $media = [];
+            if (($data['status'] ?? '') === 'redirect' && !empty($data['url'])) {
+                $isVideo = str_contains($data['url'], '.mp4') || str_contains($data['url'], '/t50.') || str_contains($data['filename'] ?? '', '.mp4');
                 if ($isVideo) {
-                    $filtered[] = [
-                        'id' => 'story_' . $idx . '_' . time(),
-                        'url' => $item['url'],
-                        'video_url' => $item['url'],
-                        'type' => 'video',
-                        'preview' => $item['url']
+                    $media[] = [
+                        'url' => $data['url'],
+                        'video_url' => $data['url'],
+                        'type' => 'video'
                     ];
                 }
-            }
-            if (!empty($filtered)) return $filtered;
-        }
-
-        // 2. Try SnapSave
-        $snapRes = fetchSnapSaveMediaPHP($targetUrl);
-        if ($snapRes && !empty($snapRes['media'])) {
-            $filtered = [];
-            foreach ($snapRes['media'] as $idx => $item) {
-                $isVideo = ($item['type'] ?? '') === 'video' || str_contains($item['url'], '.mp4') || str_contains($item['url'], '/t50.');
-                if ($isVideo) {
-                    $filtered[] = [
-                        'id' => 'story_' . $idx . '_' . time(),
-                        'url' => $item['url'],
-                        'video_url' => $item['url'],
-                        'type' => 'video',
-                        'preview' => $item['url']
-                    ];
+            } else if (($data['status'] ?? '') === 'stream' && !empty($data['url'])) {
+                $media[] = [
+                    'url' => $data['url'],
+                    'video_url' => $data['url'],
+                    'type' => 'video'
+                ];
+            } else if (($data['status'] ?? '') === 'picker' && !empty($data['picker'])) {
+                foreach ($data['picker'] as $item) {
+                    if (!empty($item['url'])) {
+                        $isVideo = ($item['type'] ?? '') === 'video' || str_contains($item['url'], '.mp4') || str_contains($item['url'], '/t50.');
+                        if ($isVideo) {
+                            $media[] = [
+                                'url' => $item['url'],
+                                'video_url' => $item['url'],
+                                'type' => 'video'
+                            ];
+                        }
+                    }
                 }
             }
-            if (!empty($filtered)) return $filtered;
+
+            if (!empty($media)) {
+                return [
+                    'success' => true,
+                    'owner' => 'instagram_user',
+                    'caption' => '',
+                    'media_type' => 'video',
+                    'media' => $media
+                ];
+            }
         }
     } catch (\Exception $e) {}
     return null;
 }
 
-// API Download Handler
+// ===== MAIN API DOWNLOAD HANDLER =====
 Route::post('/api/download', function (Request $request) {
     $data = json_decode($request->getContent(), true) ?: $request->all();
     $type = $data['type'] ?? $request->input('type') ?? 'single';
@@ -323,56 +340,86 @@ Route::post('/api/download', function (Request $request) {
 
     $rawInput = $rawUrl ?: $rawUsername;
     if (empty($rawInput)) {
-        return response()->json(['error' => 'Please provide a valid Instagram username or video link.'], 400);
+        return response()->json(['error' => 'Please provide a valid Instagram username or video link.'], 400)
+            ->header('Access-Control-Allow-Origin', '*');
     }
 
     $cleanUsername = cleanInstagramUsernamePHP($rawInput);
 
-    // 1. If bulk profile request (100% MP4 Videos & Reels)
+    // 1. BULK PROFILE VIDEO REQUEST (100% MP4 VIDEOS & REELS)
     if ($type === 'bulk-fetch' || $type === 'bulk-video' || $type === 'bulk') {
         $webProfilePosts = fetchInstagramWebProfileReelsPHP($cleanUsername, $limit);
         if ($webProfilePosts && !empty($webProfilePosts)) {
             return response()->json(['posts' => $webProfilePosts])->header('Access-Control-Allow-Origin', '*');
         }
-    }
 
-    // 2. If stories request
-    if ($type === 'stories') {
-        $storyPosts = fetchInstagramStoriesPHP($cleanUsername);
-        if ($storyPosts && !empty($storyPosts)) {
-            return response()->json(['stories' => $storyPosts])->header('Access-Control-Allow-Origin', '*');
-        }
-    }
-
-    $targetInput = "https://www.instagram.com/{$cleanUsername}/";
-    $result = null;
-
-    // 3. Try Cobalt API
-    $result = fetchCobaltInstagram("https://www.instagram.com/{$cleanUsername}/reels/");
-    if (!$result) {
-        $result = fetchCobaltInstagram($targetInput);
-    }
-
-    // 4. Try SnapSave PHP Deobfuscator
-    if (!$result) {
-        $result = fetchSnapSaveMediaPHP($targetInput);
-    }
-
-    if ($result) {
-        if ($type === 'bulk-fetch' || $type === 'bulk-video' || $type === 'stories' || $type === 'bulk') {
+        // Fallback: Cobalt Reels
+        $cobaltRes = fetchCobaltInstagram("https://www.instagram.com/{$cleanUsername}/reels/");
+        if ($cobaltRes && !empty($cobaltRes['media'])) {
             $posts = array_map(function ($item, $idx) {
                 return [
-                    'id' => 'post_' . $idx . '_' . time(),
+                    'id' => 'reel_' . $idx . '_' . time(),
                     'url' => $item['url'],
                     'video_url' => $item['url'],
                     'type' => 'video',
                     'preview' => $item['url']
                 ];
-            }, $result['media'], array_keys($result['media']));
-            return response()->json($type === 'stories' ? ['stories' => $posts] : ['posts' => $posts])
-                ->header('Access-Control-Allow-Origin', '*');
+            }, $cobaltRes['media'], array_keys($cobaltRes['media']));
+            return response()->json(['posts' => $posts])->header('Access-Control-Allow-Origin', '*');
         }
-        return response()->json($result)->header('Access-Control-Allow-Origin', '*');
+    }
+
+    // 2. STORIES REQUEST (VIDEOS & STORIES)
+    if ($type === 'stories') {
+        $targetStoryUrl = "https://www.instagram.com/stories/{$cleanUsername}/";
+        $snapStory = fetchSnapSaveMediaPHP($targetStoryUrl);
+        if ($snapStory && !empty($snapStory['media'])) {
+            $posts = array_map(function ($item, $idx) {
+                return [
+                    'id' => 'story_' . $idx . '_' . time(),
+                    'url' => $item['url'],
+                    'video_url' => $item['url'],
+                    'type' => 'video',
+                    'preview' => $item['url']
+                ];
+            }, $snapStory['media'], array_keys($snapStory['media']));
+            return response()->json(['stories' => $posts])->header('Access-Control-Allow-Origin', '*');
+        }
+
+        $cobaltStory = fetchCobaltInstagram($targetStoryUrl);
+        if ($cobaltStory && !empty($cobaltStory['media'])) {
+            $posts = array_map(function ($item, $idx) {
+                return [
+                    'id' => 'story_' . $idx . '_' . time(),
+                    'url' => $item['url'],
+                    'video_url' => $item['url'],
+                    'type' => 'video',
+                    'preview' => $item['url']
+                ];
+            }, $cobaltStory['media'], array_keys($cobaltStory['media']));
+            return response()->json(['stories' => $posts])->header('Access-Control-Allow-Origin', '*');
+        }
+    }
+
+    // 3. SINGLE REEL / VIDEO / POST REQUEST
+    $singleUrl = str_starts_with($rawInput, 'http') ? $rawInput : "https://www.instagram.com/reel/{$cleanUsername}/";
+
+    // Engine A: Embed Extractor
+    $embedRes = fetchInstagramEmbedVideoPHP($singleUrl);
+    if ($embedRes) {
+        return response()->json($embedRes)->header('Access-Control-Allow-Origin', '*');
+    }
+
+    // Engine B: SnapSave Deobfuscator
+    $snapRes = fetchSnapSaveMediaPHP($singleUrl);
+    if ($snapRes) {
+        return response()->json($snapRes)->header('Access-Control-Allow-Origin', '*');
+    }
+
+    // Engine C: Cobalt Multi-Media Relay
+    $cobaltRes = fetchCobaltInstagram($singleUrl);
+    if ($cobaltRes) {
+        return response()->json($cobaltRes)->header('Access-Control-Allow-Origin', '*');
     }
 
     return response()->json([
