@@ -19,6 +19,7 @@ export default function StoryDownloader() {
   const [error, setError] = useState("");
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [videoState, setVideoState] = useState<Record<number, boolean>>({});
+  const [brokenState, setBrokenState] = useState<Record<number, boolean>>({});
   const [filterTab, setFilterTab] = useState<"all" | "videos" | "photos">("all");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,6 +31,7 @@ export default function StoryDownloader() {
     setError("");
     setStories([]);
     setVideoState({});
+    setBrokenState({});
 
     try {
       const response = await axios.post(`${API_BASE_URL}/api/download`, {
@@ -57,15 +59,26 @@ export default function StoryDownloader() {
     setVideoState(prev => ({ ...prev, [idx]: true }));
   };
 
-  const filteredStories = stories.filter((story, idx) => {
-    const isVid = videoState[idx] || story.type === "video" || story.url.includes(".mp4") || story.url.includes("/t50.");
+  const markAsBroken = (idx: number) => {
+    setBrokenState(prev => ({ ...prev, [idx]: true }));
+  };
+
+  const validStories = stories.filter((_, idx) => !brokenState[idx]);
+
+  const filteredStories = validStories.filter((story) => {
+    const origIdx = stories.indexOf(story);
+    const isVid = videoState[origIdx] || story.type === "video" || story.url.includes(".mp4") || story.url.includes("/t50.");
     if (filterTab === "videos") return isVid;
     if (filterTab === "photos") return !isVid;
     return true;
   });
 
-  const videoCount = stories.filter((s, idx) => videoState[idx] || s.type === "video" || s.url.includes(".mp4") || s.url.includes("/t50.")).length;
-  const photoCount = stories.length - videoCount;
+  const videoCount = validStories.filter((s) => {
+    const origIdx = stories.indexOf(s);
+    return videoState[origIdx] || s.type === "video" || s.url.includes(".mp4") || s.url.includes("/t50.");
+  }).length;
+
+  const photoCount = validStories.length - videoCount;
 
   const handleDownloadAllZip = async () => {
     if (filteredStories.length === 0) return;
@@ -153,7 +166,7 @@ export default function StoryDownloader() {
         </div>
       )}
 
-      {stories.length > 0 && (
+      {validStories.length > 0 && (
         <div className="glass-panel p-6 rounded-2xl animate-fade-in">
           {/* Top Category Filter Tabs */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b border-white/10">
@@ -165,7 +178,7 @@ export default function StoryDownloader() {
                 }`}
               >
                 <Layers className="h-4 w-4" />
-                <span>All Stories ({stories.length})</span>
+                <span>All Stories ({validStories.length})</span>
               </button>
 
               <button
@@ -208,7 +221,7 @@ export default function StoryDownloader() {
               const origIdx = stories.indexOf(story);
               const isVideo = videoState[origIdx] || story.type === "video" || story.url.includes(".mp4") || story.url.includes("/t50.");
               const proxyVideoUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}&type=video`;
-              const proxyImageUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}`;
+              const proxyImageUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.preview || story.url)}`;
               const proxyMp3Url = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}&format=mp3`;
 
               return (
@@ -226,7 +239,13 @@ export default function StoryDownloader() {
                     </div>
 
                     {isVideo ? (
-                      <video controls className="w-full h-full object-cover">
+                      <video 
+                        controls 
+                        preload="metadata"
+                        poster={proxyImageUrl}
+                        className="w-full h-full object-cover"
+                        onError={() => markAsBroken(origIdx)}
+                      >
                         <source src={proxyVideoUrl} type="video/mp4" />
                       </video>
                     ) : (

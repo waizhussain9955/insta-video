@@ -340,7 +340,12 @@ export default function BulkDownloader() {
                     </div>
 
                     {isVid ? (
-                      <video controls className="w-full h-full object-cover">
+                      <video 
+                        controls 
+                        preload="metadata"
+                        poster={proxyMediaUrl}
+                        className="w-full h-full object-cover"
+                      >
                         <source src={directMediaDownloadUrl} type="video/mp4" />
                       </video>
                     ) : (
