@@ -3,13 +3,12 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Client\Pool;
 
 Route::get('/', function () {
     return response()->json([
         'status' => 'online',
         'service' => 'Instagram High-Performance Media Downloader API',
-        'version' => '5.1.0',
+        'version' => '5.2.0',
         'endpoints' => [
             'POST /api/download' => 'Ultra-fast parallel fetching for 100% MP4 Videos, Reels & Stories',
             'GET /api/proxy' => 'Proxy media stream bypassing Instagram CDN CORS'
@@ -27,7 +26,7 @@ Route::options('/{any}', function () {
         ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-IG-App-ID');
 })->where('any', '.*');
 
-// ===== UTILITIES =====
+// Clean Username / URL Utility (Strips ?utm_source=..., @, domains)
 function cleanInstagramUsernamePHP($input) {
     $raw = trim($input);
     if (empty($raw)) return '';
@@ -46,16 +45,7 @@ function cleanInstagramUsernamePHP($input) {
     return str_replace('@', '', $raw);
 }
 
-function getInstagramShortcodePHP($url) {
-    if (empty($url)) return null;
-    $clean = explode('?', $url)[0];
-    if (preg_match('/(?:p|reel|reels|tv|stories\/[^\/]+|s\/[^\/]+)\/([A-Za-z0-9_:-]+)/i', $clean, $matches)) {
-        return $matches[1];
-    }
-    return null;
-}
-
-// ===== ENGINE 1: NATIVE INSTAGRAM WEB PROFILE GRAPHQL ENGINE (FULL BROWSER SIGNATURE) =====
+// ===== ENGINE 1: NATIVE INSTAGRAM WEB PROFILE GRAPHQL ENGINE =====
 function fetchInstagramWebProfileReelsPHP($usernameInput, $limit = 12) {
     try {
         $cleanUsername = cleanInstagramUsernamePHP($usernameInput);
@@ -63,14 +53,9 @@ function fetchInstagramWebProfileReelsPHP($usernameInput, $limit = 12) {
 
         $url = "https://www.instagram.com/api/v1/users/web_profile_info/?username={$cleanUsername}";
         $resp = Http::withoutVerifying()->timeout(10)->withHeaders([
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-            'Accept' => '*/*',
-            'Accept-Language' => 'en-US,en;q=0.9',
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'X-IG-App-ID' => '936619743392459',
-            'X-ASBD-ID' => '129477',
-            'X-IG-WWW-Claim' => '0',
             'X-Requested-With' => 'XMLHttpRequest',
-            'Origin' => 'https://www.instagram.com',
             'Referer' => "https://www.instagram.com/{$cleanUsername}/"
         ])->get($url);
 
@@ -256,7 +241,7 @@ Route::get('/api/proxy', function (Request $request) {
 
     try {
         $response = Http::withoutVerifying()->timeout(10)->withHeaders([
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Referer' => 'https://www.instagram.com/'
         ])->get($targetUrl);
 

@@ -127,14 +127,9 @@ async function fetchInstagramWebProfileReels(usernameInput: string, limit: numbe
     const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${cleanUser}`;
     const resp = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-        'Accept': '*/*',
-        'Accept-Language': 'en-US,en;q=0.9',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'X-IG-App-ID': '936619743392459',
-        'X-ASBD-ID': '129477',
-        'X-IG-WWW-Claim': '0',
         'X-Requested-With': 'XMLHttpRequest',
-        'Origin': 'https://www.instagram.com',
         'Referer': `https://www.instagram.com/${cleanUser}/`
       },
       timeout: 10000
