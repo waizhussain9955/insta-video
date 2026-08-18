@@ -4,6 +4,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Download, AlertCircle, Loader2, Library, CheckSquare, Square, Film, Music, Play, Sparkles } from "lucide-react";
 import { API_BASE_URL, getProxyUrl, requestDownloaderApi } from "../config";
+import { convertMediaUrlToMp3Blob, triggerBlobDownload } from "../utils/audioConverter";
 import JSZip from "jszip";
 
 interface ProfileVideo {
@@ -134,6 +135,22 @@ export default function BulkVideoDownloader() {
       setError(`Failed to generate ZIP package: ${err.message || err}`);
     } finally {
       setZipping(false);
+    }
+  };
+
+  const [convertingMp3Id, setConvertingMp3Id] = useState<string | null>(null);
+
+  const handleDownloadBulkMp3 = async (rawMediaUrl: string, postId: string) => {
+    setConvertingMp3Id(postId);
+    try {
+      const proxyStreamUrl = getProxyUrl(rawMediaUrl);
+      const { blob } = await convertMediaUrlToMp3Blob(proxyStreamUrl);
+      const filename = `${username || "instagram"}_audio_${postId}_${Date.now()}.mp3`;
+      triggerBlobDownload(blob, filename);
+    } catch (err: any) {
+      alert(err.message || "This reel has no audio or is silent.");
+    } finally {
+      setConvertingMp3Id(null);
     }
   };
 
@@ -308,15 +325,20 @@ export default function BulkVideoDownloader() {
                         <span>Download MP4</span>
                       </a>
 
-                      <a
-                        href={directMp3DownloadUrl}
-                        download={`${username}_audio_${post.id}.mp3`}
-                        className="bg-white/10 hover:bg-white/20 text-pink-300 font-semibold rounded-lg px-3 py-2 text-xs flex items-center justify-center space-x-1 transition border border-white/10"
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadBulkMp3(post.url, post.id)}
+                        disabled={convertingMp3Id === post.id}
+                        className="bg-white/10 hover:bg-white/20 text-pink-300 font-semibold rounded-lg px-3 py-2 text-xs flex items-center justify-center space-x-1 transition border border-white/10 cursor-pointer disabled:opacity-50"
                         title="Download Audio Only (MP3)"
                       >
-                        <Music className="h-3.5 w-3.5 text-pink-400" />
+                        {convertingMp3Id === post.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-pink-400" />
+                        ) : (
+                          <Music className="h-3.5 w-3.5 text-pink-400" />
+                        )}
                         <span>MP3</span>
-                      </a>
+                      </button>
                     </div>
                   </div>
                 </div>

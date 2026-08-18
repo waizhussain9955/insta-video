@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@breezystack/lamejs": "^1.2.7",
     "axios": "^1.17.0",
     "instagram-url-direct": "^2.0.7",
     "jszip": "^3.10.1",

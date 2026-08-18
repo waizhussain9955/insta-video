@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Download, AlertCircle, Loader2, Sparkles, Music, Film, CheckCircle2 } from "lucide-react";
 import { getProxyUrl, requestDownloaderApi } from "../config";
+import { convertMediaUrlToMp3Blob, triggerBlobDownload } from "../utils/audioConverter";
 
 interface MediaItem {
   url: string;
@@ -25,6 +26,7 @@ function SingleDownloaderContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<ScrapeResult | null>(null);
+  const [convertingMp3Idx, setConvertingMp3Idx] = useState<number | null>(null);
 
   useEffect(() => {
     const urlParam = searchParams.get("url");
@@ -59,6 +61,20 @@ function SingleDownloaderContent() {
     }
   };
 
+  const handleDownloadMp3 = async (rawMediaUrl: string, idx: number) => {
+    setConvertingMp3Idx(idx);
+    try {
+      const proxyStreamUrl = getProxyUrl(rawMediaUrl);
+      const { blob } = await convertMediaUrlToMp3Blob(proxyStreamUrl);
+      const filename = `instagram_audio_${result?.owner || "reel"}_${idx + 1}_${Date.now()}.mp3`;
+      triggerBlobDownload(blob, filename);
+    } catch (err: any) {
+      alert(err.message || "Failed to extract MP3 audio. Post might be silent.");
+    } finally {
+      setConvertingMp3Idx(null);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-16">
       <div className="text-center mb-10">
@@ -86,7 +102,7 @@ function SingleDownloaderContent() {
           <button
             type="submit"
             disabled={loading}
-            className="gradient-btn text-white font-semibold rounded-xl px-8 py-4 flex items-center justify-center space-x-2 disabled:opacity-50"
+            className="gradient-btn text-white font-semibold rounded-xl px-8 py-4 flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -127,7 +143,6 @@ function SingleDownloaderContent() {
               const mediaUrl = item.video_url || item.url;
               const isVideo = item.type === "video" || (mediaUrl && mediaUrl.includes(".mp4"));
               const proxyDownloadUrl = getProxyUrl(mediaUrl);
-              const proxyAudioUrl = getProxyUrl(mediaUrl, "mp3");
 
               return (
                 <div key={idx} className="glass-panel rounded-xl overflow-hidden group relative border border-white/5 bg-zinc-900/60">
@@ -153,14 +168,19 @@ function SingleDownloaderContent() {
                       <span>Download {isVideo ? "HD Video (MP4)" : "HD Photo"}</span>
                     </a>
                     {isVideo && (
-                      <a
-                        href={proxyAudioUrl}
-                        download={`instagram_audio_${idx + 1}.mp3`}
-                        className="w-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/30 text-cyan-300 font-semibold rounded-lg py-2.5 text-xs flex items-center justify-center space-x-2 transition"
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadMp3(mediaUrl, idx)}
+                        disabled={convertingMp3Idx === idx}
+                        className="w-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/30 text-cyan-300 font-semibold rounded-lg py-2.5 text-xs flex items-center justify-center space-x-2 transition cursor-pointer disabled:opacity-50"
                       >
-                        <Music className="h-3.5 w-3.5 text-cyan-400" />
-                        <span>Download MP3 Audio (320kbps)</span>
-                      </a>
+                        {convertingMp3Idx === idx ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+                        ) : (
+                          <Music className="h-3.5 w-3.5 text-cyan-400" />
+                        )}
+                        <span>{convertingMp3Idx === idx ? "Converting to MP3..." : "Download Real MP3 Audio (320kbps)"}</span>
+                      </button>
                     )}
                   </div>
                 </div>

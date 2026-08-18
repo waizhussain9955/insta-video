@@ -4,6 +4,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Download, AlertCircle, Loader2, PlayCircle, Eye, Music, Film, Play, Image as ImageIcon, Layers } from "lucide-react";
 import { API_BASE_URL, getProxyUrl, requestDownloaderApi } from "../config";
+import { convertMediaUrlToMp3Blob, triggerBlobDownload } from "../utils/audioConverter";
 import JSZip from "jszip";
 
 interface StoryItem {
@@ -110,6 +111,22 @@ export default function StoryDownloader() {
       setError(`Failed to generate Stories ZIP: ${err.message}`);
     } finally {
       setZipping(false);
+    }
+  };
+
+  const [convertingMp3Idx, setConvertingMp3Idx] = useState<number | null>(null);
+
+  const handleDownloadStoryMp3 = async (rawMediaUrl: string, idx: number) => {
+    setConvertingMp3Idx(idx);
+    try {
+      const proxyStreamUrl = getProxyUrl(rawMediaUrl);
+      const { blob } = await convertMediaUrlToMp3Blob(proxyStreamUrl);
+      const filename = `story_audio_${username || "user"}_${idx + 1}_${Date.now()}.mp3`;
+      triggerBlobDownload(blob, filename);
+    } catch (err: any) {
+      alert(err.message || "This story has no audio or is silent.");
+    } finally {
+      setConvertingMp3Idx(null);
     }
   };
 
@@ -270,15 +287,22 @@ export default function StoryDownloader() {
                         <span>{isVideo ? "Download MP4" : "Download Photo"}</span>
                       </a>
 
-                      <a
-                        href={proxyMp3Url}
-                        download={`story_${fIdx + 1}.mp3`}
-                        className="bg-white/10 hover:bg-white/20 text-pink-300 font-semibold rounded-lg px-2.5 py-2 text-xs flex items-center justify-center space-x-1 transition border border-white/10"
-                        title="Download Audio Only (MP3)"
-                      >
-                        <Music className="h-3.5 w-3.5 text-pink-400" />
-                        <span>MP3</span>
-                      </a>
+                      {isVideo && (
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadStoryMp3(story.url, origIdx)}
+                          disabled={convertingMp3Idx === origIdx}
+                          className="bg-white/10 hover:bg-white/20 text-pink-300 font-semibold rounded-lg px-2.5 py-2 text-xs flex items-center justify-center space-x-1 transition border border-white/10 cursor-pointer disabled:opacity-50"
+                          title="Download Audio Only (MP3)"
+                        >
+                          {convertingMp3Idx === origIdx ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-pink-400" />
+                          ) : (
+                            <Music className="h-3.5 w-3.5 text-pink-400" />
+                          )}
+                          <span>MP3</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
