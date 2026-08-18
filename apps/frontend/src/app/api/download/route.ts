@@ -22,6 +22,7 @@ function cleanInstagramUser(input: string): string {
 // ===== ENGINE 0: MANAGED RAPIDAPI ENGINE (100% RELIABLE, ZERO 429 BLOCKS) =====
 async function fetchFromRapidAPI(targetUrl: string, apiKey: string, apiHost: string = "social-media-video-downloader.p.rapidapi.com") {
   try {
+    // 1. Try Social Media Video Downloader
     const resp = await axios.get(`https://${apiHost}/smvd/get/all`, {
       params: { url: targetUrl },
       headers: {
@@ -64,8 +65,56 @@ async function fetchFromRapidAPI(targetUrl: string, apiKey: string, apiHost: str
       };
     }
   } catch (err: any) {
-    console.error("RapidAPI Error:", err.message);
+    console.error("RapidAPI Provider 1 Error:", err.message);
   }
+
+  // 2. Try Instagram Downloader V2 Fallback
+  try {
+    const resp2 = await axios.get(`https://instagram-downloader-v2.p.rapidapi.com/index`, {
+      params: { url: targetUrl },
+      headers: {
+        "x-rapidapi-key": apiKey,
+        "x-rapidapi-host": "instagram-downloader-v2.p.rapidapi.com"
+      },
+      timeout: 15000
+    });
+
+    const data2 = resp2.data;
+    const media2: any[] = [];
+
+    if (Array.isArray(data2.media)) {
+      for (const m of data2.media) {
+        if (m.url) {
+          media2.push({
+            url: m.url,
+            video_url: m.url,
+            type: "video",
+            preview: m.preview || m.url
+          });
+        }
+      }
+    } else if (data2.url) {
+      media2.push({
+        url: data2.url,
+        video_url: data2.url,
+        type: "video",
+        preview: data2.url
+      });
+    }
+
+    if (media2.length > 0) {
+      return {
+        success: true,
+        owner: "instagram_user",
+        caption: "",
+        media_type: "video",
+        media: media2
+      };
+    }
+  } catch (err2: any) {
+    console.error("RapidAPI Provider 2 Error:", err2.message);
+  }
+
   return null;
 }
 
