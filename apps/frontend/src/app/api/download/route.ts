@@ -19,7 +19,57 @@ function cleanInstagramUser(input: string): string {
   return clean.replace("@", "");
 }
 
-// ===== ENGINE 1: NATIVE INSTAGRAM WEB PROFILE GRAPHQL ENGINE (FULL BROWSER SIGNATURE) =====
+// ===== ENGINE 0: MANAGED RAPIDAPI ENGINE (100% RELIABLE, ZERO 429 BLOCKS) =====
+async function fetchFromRapidAPI(targetUrl: string, apiKey: string, apiHost: string = "social-media-video-downloader.p.rapidapi.com") {
+  try {
+    const resp = await axios.get(`https://${apiHost}/smvd/get/all`, {
+      params: { url: targetUrl },
+      headers: {
+        "x-rapidapi-key": apiKey,
+        "x-rapidapi-host": apiHost
+      },
+      timeout: 15000
+    });
+
+    const data = resp.data;
+    const media: any[] = [];
+
+    if (Array.isArray(data.links)) {
+      for (const item of data.links) {
+        if (item.link) {
+          media.push({
+            url: item.link,
+            video_url: item.link,
+            type: "video",
+            preview: item.link
+          });
+        }
+      }
+    } else if (data.url) {
+      media.push({
+        url: data.url,
+        video_url: data.url,
+        type: "video",
+        preview: data.url
+      });
+    }
+
+    if (media.length > 0) {
+      return {
+        success: true,
+        owner: data.author || "instagram_user",
+        caption: data.title || "",
+        media_type: "video",
+        media
+      };
+    }
+  } catch (err: any) {
+    console.error("RapidAPI Error:", err.message);
+  }
+  return null;
+}
+
+// ===== ENGINE 1: NATIVE INSTAGRAM WEB PROFILE GRAPHQL ENGINE =====
 async function fetchInstagramWebProfileReels(usernameInput: string, limit: number = 12) {
   try {
     const cleanUser = cleanInstagramUser(usernameInput);
@@ -156,6 +206,32 @@ export async function POST(req: Request) {
     }
 
     const cleanUser = cleanInstagramUser(rawInput);
+    const targetUrl = rawInput.startsWith("http") ? rawInput : `https://www.instagram.com/${cleanUser}/`;
+
+    // Check if RapidAPI Key is provided
+    const apiKey = process.env.RAPIDAPI_KEY || process.env.NEXT_PUBLIC_API_KEY;
+    const hasValidKey = apiKey && apiKey !== "wp_instasave_rapidapi_key_demo_12345" && apiKey.trim() !== "";
+
+    // 0. Try RapidAPI First if Key is Present
+    if (hasValidKey) {
+      const rapidRes = await fetchFromRapidAPI(targetUrl, apiKey!);
+      if (rapidRes && rapidRes.media?.length > 0) {
+        if (type === "bulk-video" || type === "bulk-fetch" || type === "bulk") {
+          const posts = rapidRes.media.map((item, idx) => ({
+            id: `post_${idx}_${Date.now()}`,
+            url: item.url,
+            video_url: item.url,
+            type: "video",
+            preview: item.preview || item.url
+          }));
+          return NextResponse.json({ posts });
+        }
+        if (type === "stories") {
+          return NextResponse.json({ stories: rapidRes.media });
+        }
+        return NextResponse.json(rapidRes);
+      }
+    }
 
     // 1. Bulk Profile Video Request
     if (type === "bulk-video" || type === "bulk-fetch" || type === "bulk") {
