@@ -12,7 +12,6 @@ export default function Navbar() {
     { name: "Single Downloader", href: "/single" },
     { name: "Story Downloader", href: "/story" },
     { name: "Bulk Downloader", href: "/bulk" },
-    { name: "Photo Downloader", href: "/photo" },
     { name: "Blog", href: "/blog" },
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
