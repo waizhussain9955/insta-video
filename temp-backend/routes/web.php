@@ -9,14 +9,7 @@ Route::get('/', function () {
     return response()->json([
         'status' => 'online',
         'service' => 'Instagram High-Performance Media Downloader API',
-        'version' => '5.0.0',
-        'engines' => [
-            'Engine 1' => 'Native Instagram Web Profile GraphQL (X-IG-App-ID)',
-            'Engine 2' => 'Instagram Embed Captioned Video Extractor',
-            'Engine 3' => 'SnapSave High-Speed PHP Deobfuscator',
-            'Engine 4' => 'Cobalt Multi-Media Stream Relays',
-            'Engine 5' => 'Universal High-Speed Proxy Stream Engine'
-        ],
+        'version' => '5.1.0',
         'endpoints' => [
             'POST /api/download' => 'Ultra-fast parallel fetching for 100% MP4 Videos, Reels & Stories',
             'GET /api/proxy' => 'Proxy media stream bypassing Instagram CDN CORS'
@@ -62,17 +55,22 @@ function getInstagramShortcodePHP($url) {
     return null;
 }
 
-// ===== ENGINE 1: NATIVE INSTAGRAM WEB PROFILE GRAPHQL ENGINE (0.2s SPEED) =====
+// ===== ENGINE 1: NATIVE INSTAGRAM WEB PROFILE GRAPHQL ENGINE (FULL BROWSER SIGNATURE) =====
 function fetchInstagramWebProfileReelsPHP($usernameInput, $limit = 12) {
     try {
         $cleanUsername = cleanInstagramUsernamePHP($usernameInput);
         if (empty($cleanUsername)) return null;
 
         $url = "https://www.instagram.com/api/v1/users/web_profile_info/?username={$cleanUsername}";
-        $resp = Http::withoutVerifying()->timeout(8)->withHeaders([
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        $resp = Http::withoutVerifying()->timeout(10)->withHeaders([
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+            'Accept' => '*/*',
+            'Accept-Language' => 'en-US,en;q=0.9',
             'X-IG-App-ID' => '936619743392459',
+            'X-ASBD-ID' => '129477',
+            'X-IG-WWW-Claim' => '0',
             'X-Requested-With' => 'XMLHttpRequest',
+            'Origin' => 'https://www.instagram.com',
             'Referer' => "https://www.instagram.com/{$cleanUsername}/"
         ])->get($url);
 
@@ -123,159 +121,7 @@ function fetchInstagramWebProfileReelsPHP($usernameInput, $limit = 12) {
     return null;
 }
 
-// ===== ENGINE 2: INSTAGRAM EMBED EXTRACTOR (SINGLE REELS & VIDEOS) =====
-function fetchInstagramEmbedVideoPHP($urlOrCode) {
-    try {
-        $code = getInstagramShortcodePHP($urlOrCode) ?: $urlOrCode;
-        if (!$code) return null;
-
-        $embedUrl = "https://www.instagram.com/p/{$code}/embed/captioned/";
-        $resp = Http::withoutVerifying()->timeout(8)->withHeaders([
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        ])->get($embedUrl);
-
-        if ($resp->successful()) {
-            $html = $resp->body();
-            $videoUrl = null;
-            $displayUrl = null;
-
-            if (preg_match('/"video_url"\s*:\s*"([^"]+)"/', $html, $vMatch)) {
-                $videoUrl = stripcslashes(html_entity_decode($vMatch[1]));
-            }
-            if (preg_match('/"video_src"\s*:\s*"([^"]+)"/', $html, $vMatch2)) {
-                $videoUrl = stripcslashes(html_entity_decode($vMatch2[1]));
-            }
-            if (preg_match('/"display_url"\s*:\s*"([^"]+)"/', $html, $dMatch)) {
-                $displayUrl = stripcslashes(html_entity_decode($dMatch[1]));
-            }
-
-            if (!$videoUrl) {
-                preg_match_all('#https?://[^\s"\'<>]*?(?:fbcdn|cdninstagram|scontent)[^\s"\'<>]*#i', $html, $mediaMatches);
-                foreach ($mediaMatches[0] ?? [] as $mUrl) {
-                    $cleanMUrl = html_entity_decode(str_replace(['\\/', '&amp;'], ['/', '&'], $mUrl));
-                    if (str_contains($cleanMUrl, '.mp4') || str_contains($cleanMUrl, '/t50.')) {
-                        $videoUrl = $cleanMUrl;
-                        break;
-                    }
-                }
-            }
-
-            if ($videoUrl) {
-                return [
-                    'success' => true,
-                    'owner' => 'instagram_user',
-                    'caption' => '',
-                    'media_type' => 'video',
-                    'media' => [
-                        [
-                            'url' => $videoUrl,
-                            'video_url' => $videoUrl,
-                            'type' => 'video',
-                            'preview' => $displayUrl ?: $videoUrl
-                        ]
-                    ]
-                ];
-            }
-        }
-    } catch (\Exception $e) {}
-    return null;
-}
-
-// ===== ENGINE 3: SNAPSAVE DEOBFUSCATOR =====
-function convertBasePHP($d, $e, $f) {
-    $g = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/";
-    $h = substr($g, 0, $e);
-    $i = substr($g, 0, $f);
-    $j = 0;
-    $len = strlen($d);
-    for ($c = 0; $c < $len; $c++) {
-        $b = $d[$len - 1 - $c];
-        $index = strpos($h, $b);
-        if ($index !== false) {
-            $j += $index * pow($e, $c);
-        }
-    }
-    $k = "";
-    $temp = $j;
-    while ($temp > 0) {
-        $k = $i[$temp % $f] . $k;
-        $temp = floor($temp / $f);
-    }
-    return $k ?: "0";
-}
-
-function deobfuscateSnapSavePHP($h, $n, $t, $e) {
-    $r = "";
-    $i = 0;
-    $len = strlen($h);
-    while ($i < $len) {
-        $s = "";
-        while ($i < $len && $h[$i] !== $n[$e]) {
-            $s .= $h[$i];
-            $i++;
-        }
-        $sMapped = "";
-        for ($c = 0; $c < strlen($s); $c++) {
-            $sMapped .= strpos($n, $s[$c]);
-        }
-        $val = intval(convertBasePHP($sMapped, $e, 10)) - $t;
-        $r .= chr($val);
-        $i++;
-    }
-    return $r;
-}
-
-function fetchSnapSaveMediaPHP($targetUrl) {
-    try {
-        $snapResp = Http::withoutVerifying()->timeout(8)->withHeaders([
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Referer' => 'https://snapsave.app/',
-            'Origin' => 'https://snapsave.app',
-            'Content-Type' => 'application/x-www-form-urlencoded'
-        ])->asForm()->post('https://snapsave.app/action.php', ['url' => $targetUrl]);
-
-        if ($snapResp->successful()) {
-            $html = $snapResp->body();
-            
-            if (preg_match('/\(["\'](\w+)["\'],\s*\d+,\s*["\'](\w+)["\'],\s*(\d+),\s*(\d+),\s*\d+\)/', $html, $matches)) {
-                $encoded = $matches[1];
-                $charset = $matches[2];
-                $shift = intval($matches[3]);
-                $radix = intval($matches[4]);
-
-                $decoded = deobfuscateSnapSavePHP($encoded, $charset, $shift, $radix);
-                $unescaped = str_replace(['\\"', "\\'", '\\/', '\\n', '\\t'], ['"', "'", '/', "\n", "\t"], $decoded);
-
-                preg_match_all('#https?://[^\s"\'<>]*?(?:rapidcdn|fbcdn|cdninstagram|scontent)[^\s"\'<>]*#i', $unescaped, $urlMatches);
-                $rawUrls = array_unique($urlMatches[0] ?? []);
-                $media = [];
-                foreach ($rawUrls as $u) {
-                    $cleanUrl = str_replace(['\\/', '&amp;'], ['/', '&'], $u);
-                    $isVideo = str_contains($cleanUrl, '.mp4') || str_contains($cleanUrl, '/t50.');
-                    if ($isVideo) {
-                        $media[] = [
-                            'url' => $cleanUrl,
-                            'video_url' => $cleanUrl,
-                            'type' => 'video'
-                        ];
-                    }
-                }
-                if (!empty($media)) {
-                    return [
-                        'success' => true,
-                        'owner' => 'instagram_user',
-                        'caption' => '',
-                        'media_type' => 'video',
-                        'media' => $media
-                    ];
-                }
-            }
-        }
-    } catch (\Exception $e) {}
-    return null;
-}
-
-// ===== ENGINE 4: COBALT MULTI-MEDIA API =====
+// ===== ENGINE 2: COBALT MULTI-MEDIA API =====
 function fetchCobaltInstagram($url) {
     try {
         $resp = Http::withoutVerifying()->timeout(8)->withHeaders([
@@ -369,23 +215,9 @@ Route::post('/api/download', function (Request $request) {
         }
     }
 
-    // 2. STORIES REQUEST (VIDEOS & STORIES)
+    // 2. STORIES REQUEST
     if ($type === 'stories') {
         $targetStoryUrl = "https://www.instagram.com/stories/{$cleanUsername}/";
-        $snapStory = fetchSnapSaveMediaPHP($targetStoryUrl);
-        if ($snapStory && !empty($snapStory['media'])) {
-            $posts = array_map(function ($item, $idx) {
-                return [
-                    'id' => 'story_' . $idx . '_' . time(),
-                    'url' => $item['url'],
-                    'video_url' => $item['url'],
-                    'type' => 'video',
-                    'preview' => $item['url']
-                ];
-            }, $snapStory['media'], array_keys($snapStory['media']));
-            return response()->json(['stories' => $posts])->header('Access-Control-Allow-Origin', '*');
-        }
-
         $cobaltStory = fetchCobaltInstagram($targetStoryUrl);
         if ($cobaltStory && !empty($cobaltStory['media'])) {
             $posts = array_map(function ($item, $idx) {
@@ -403,20 +235,6 @@ Route::post('/api/download', function (Request $request) {
 
     // 3. SINGLE REEL / VIDEO / POST REQUEST
     $singleUrl = str_starts_with($rawInput, 'http') ? $rawInput : "https://www.instagram.com/reel/{$cleanUsername}/";
-
-    // Engine A: Embed Extractor
-    $embedRes = fetchInstagramEmbedVideoPHP($singleUrl);
-    if ($embedRes) {
-        return response()->json($embedRes)->header('Access-Control-Allow-Origin', '*');
-    }
-
-    // Engine B: SnapSave Deobfuscator
-    $snapRes = fetchSnapSaveMediaPHP($singleUrl);
-    if ($snapRes) {
-        return response()->json($snapRes)->header('Access-Control-Allow-Origin', '*');
-    }
-
-    // Engine C: Cobalt Multi-Media Relay
     $cobaltRes = fetchCobaltInstagram($singleUrl);
     if ($cobaltRes) {
         return response()->json($cobaltRes)->header('Access-Control-Allow-Origin', '*');
@@ -438,7 +256,7 @@ Route::get('/api/proxy', function (Request $request) {
 
     try {
         $response = Http::withoutVerifying()->timeout(10)->withHeaders([
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
             'Referer' => 'https://www.instagram.com/'
         ])->get($targetUrl);
 
