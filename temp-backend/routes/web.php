@@ -9,7 +9,7 @@ Route::get('/', function () {
     return response()->json([
         'status' => 'online',
         'service' => 'Instagram Media Downloader API',
-        'version' => '3.0.0',
+        'version' => '3.1.0',
         'endpoints' => [
             'POST /api/download' => 'Ultra-fast parallel fetching for 100% MP4 Videos, Reels & Stories',
             'GET /api/proxy' => 'Proxy media stream bypassing Instagram CDN CORS'
@@ -51,24 +51,6 @@ function getInstagramShortcode($url) {
         return $matches[1];
     }
     return null;
-}
-
-// Get Instagram CSRF Token
-function getInstagramCSRF() {
-    try {
-        $response = Http::timeout(6)->withHeaders([
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        ])->get('https://www.instagram.com/');
-
-        $cookies = $response->headers()['set-cookie'] ?? [];
-        foreach ($cookies as $cookie) {
-            if (str_contains($cookie, 'csrftoken=')) {
-                $parts = explode('csrftoken=', $cookie);
-                return explode(';', $parts[1])[0];
-            }
-        }
-    } catch (\Exception $e) {}
-    return 'missing_csrf';
 }
 
 // ===== ENGINE 1: COBALT MULTI-MEDIA API =====
@@ -316,19 +298,35 @@ function fetchInstagramProfilePostsPHP($usernameInput, $limit = 12) {
             }
         }
     } catch (\Exception $e) {}
+
+    // FALLBACK TO COBALT / SNAPSAVE IF HTML PROFILE SCRAPER IS RESTRICTED
+    try {
+        $cleanUsername = cleanInstagramUsernamePHP($usernameInput);
+        $cleanUrl = "https://www.instagram.com/{$cleanUsername}/reels/";
+        $cobaltRes = fetchCobaltInstagram($cleanUrl);
+        if ($cobaltRes && !empty($cobaltRes['media'])) {
+            return array_map(function ($item, $idx) {
+                return [
+                    'id' => 'reel_' . $idx . '_' . time(),
+                    'url' => $item['url'],
+                    'video_url' => $item['url'],
+                    'type' => 'video',
+                    'preview' => $item['url']
+                ];
+            }, $cobaltRes['media']);
+        }
+    } catch (\Exception $e) {}
+
     return null;
 }
 
 // ===== ENGINE 4: DEDICATED STORY SCRAPER (100% MP4 VIDEOS) =====
 function fetchInstagramStoriesPHP($input) {
     try {
-        $targetUrl = trim($input);
-        if (empty($targetUrl)) return null;
+        $cleanUsername = cleanInstagramUsernamePHP($input);
+        if (empty($cleanUsername)) return null;
 
-        if (!str_starts_with($targetUrl, 'http://') && !str_starts_with($targetUrl, 'https://')) {
-            $cleanUsername = cleanInstagramUsernamePHP($targetUrl);
-            $targetUrl = "https://www.instagram.com/stories/{$cleanUsername}/";
-        }
+        $targetUrl = "https://www.instagram.com/stories/{$cleanUsername}/";
 
         // 1. Try Cobalt API
         $cobaltRes = fetchCobaltInstagram($targetUrl);
@@ -379,14 +377,17 @@ Route::post('/api/download', function (Request $request) {
     $rawUsername = $data['username'] ?? $request->input('username') ?? '';
     $limit = intval($data['limit'] ?? $request->input('limit') ?? 12);
 
-    $targetInput = $rawUrl ?: $rawUsername;
-    if (empty($targetInput)) {
+    $rawInput = $rawUrl ?: $rawUsername;
+    if (empty($rawInput)) {
         return response()->json(['error' => 'Please provide a valid Instagram username or video link.'], 400);
     }
 
+    $cleanUsername = cleanInstagramUsernamePHP($rawInput);
+    $targetInput = "https://www.instagram.com/{$cleanUsername}/";
+
     // If stories request
     if ($type === 'stories') {
-        $storyPosts = fetchInstagramStoriesPHP($targetInput);
+        $storyPosts = fetchInstagramStoriesPHP($cleanUsername);
         if ($storyPosts && !empty($storyPosts)) {
             return response()->json(['stories' => $storyPosts])->header('Access-Control-Allow-Origin', '*');
         }
@@ -394,22 +395,19 @@ Route::post('/api/download', function (Request $request) {
 
     // If bulk request (Reels & Videos Only)
     if ($type === 'bulk-fetch' || $type === 'bulk-video' || $type === 'bulk') {
-        $bulkPosts = fetchInstagramProfilePostsPHP($targetInput, $limit);
+        $bulkPosts = fetchInstagramProfilePostsPHP($cleanUsername, $limit);
         if ($bulkPosts && !empty($bulkPosts)) {
             return response()->json(['posts' => $bulkPosts])->header('Access-Control-Allow-Origin', '*');
         }
     }
 
-    // Convert username/input to clean URL if needed
-    if (!str_starts_with($targetInput, 'http')) {
-        $cleanUser = cleanInstagramUsernamePHP($targetInput);
-        $targetInput = "https://www.instagram.com/{$cleanUser}/";
-    }
-
     $result = null;
 
-    // 1. Try Cobalt API
-    $result = fetchCobaltInstagram($targetInput);
+    // 1. Try Cobalt API with clean profile reels URL
+    $result = fetchCobaltInstagram("https://www.instagram.com/{$cleanUsername}/reels/");
+    if (!$result) {
+        $result = fetchCobaltInstagram($targetInput);
+    }
 
     // 2. Try SnapSave PHP Deobfuscator
     if (!$result) {
