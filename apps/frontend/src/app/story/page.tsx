@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
-import { Download, AlertCircle, Loader2, PlayCircle, Eye, Music, Film, Play } from "lucide-react";
+import { Download, AlertCircle, Loader2, PlayCircle, Eye, Music, Film, Play, Image as ImageIcon, Layers } from "lucide-react";
 import { API_BASE_URL } from "../config";
 import JSZip from "jszip";
 
@@ -19,6 +19,7 @@ export default function StoryDownloader() {
   const [error, setError] = useState("");
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [videoState, setVideoState] = useState<Record<number, boolean>>({});
+  const [filterTab, setFilterTab] = useState<"all" | "videos" | "photos">("all");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,14 +39,13 @@ export default function StoryDownloader() {
       const fetchedStories = response.data.stories || [];
       setStories(fetchedStories);
       
-      // Auto-detect video type for items
-      const initialVideoState: Record<number, boolean> = {};
+      const initialVidState: Record<number, boolean> = {};
       fetchedStories.forEach((story: StoryItem, idx: number) => {
         if (story.type === "video" || story.url.includes(".mp4") || story.url.includes("/t50.") || !story.url.includes(".jpg")) {
-          initialVideoState[idx] = true;
+          initialVidState[idx] = true;
         }
       });
-      setVideoState(initialVideoState);
+      setVideoState(initialVidState);
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to fetch stories/highlights. Please verify link or username is public.");
     } finally {
@@ -57,14 +57,25 @@ export default function StoryDownloader() {
     setVideoState(prev => ({ ...prev, [idx]: true }));
   };
 
+  const filteredStories = stories.filter((story, idx) => {
+    const isVid = videoState[idx] || story.type === "video" || story.url.includes(".mp4") || story.url.includes("/t50.");
+    if (filterTab === "videos") return isVid;
+    if (filterTab === "photos") return !isVid;
+    return true;
+  });
+
+  const videoCount = stories.filter((s, idx) => videoState[idx] || s.type === "video" || s.url.includes(".mp4") || s.url.includes("/t50.")).length;
+  const photoCount = stories.length - videoCount;
+
   const handleDownloadAllZip = async () => {
-    if (stories.length === 0) return;
+    if (filteredStories.length === 0) return;
     setZipping(true);
     try {
       const zip = new JSZip();
-      for (let i = 0; i < stories.length; i++) {
-        const item = stories[i];
-        const isVideo = videoState[i] || item.type === "video" || item.url.includes(".mp4") || item.url.includes("/t50.");
+      for (let i = 0; i < filteredStories.length; i++) {
+        const item = filteredStories[i];
+        const origIdx = stories.indexOf(item);
+        const isVideo = videoState[origIdx] || item.type === "video" || item.url.includes(".mp4") || item.url.includes("/t50.");
         const proxyUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}${isVideo ? '&type=video' : ''}`;
         const res = await fetch(proxyUrl);
         if (res.ok) {
@@ -99,7 +110,7 @@ export default function StoryDownloader() {
           Instagram <span className="text-gradient">Story & Highlight</span> Downloader
         </h1>
         <p className="mt-4 text-zinc-400">
-          Download active stories and highlights from any public profile or highlight link. Save MP4 videos or MP3 audio easily.
+          Download active stories and highlights from any public profile or highlight link. Filter video vs photo stories easily.
         </p>
       </div>
 
@@ -144,11 +155,39 @@ export default function StoryDownloader() {
 
       {stories.length > 0 && (
         <div className="glass-panel p-6 rounded-2xl animate-fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-white/10">
-            <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-              <PlayCircle className="h-5 w-5 text-secondary" />
-              <span>Stories / Highlights Found ({stories.length})</span>
-            </h2>
+          {/* Top Category Filter Tabs */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b border-white/10">
+            <div className="flex items-center space-x-2 bg-white/5 p-1 rounded-xl border border-white/10">
+              <button
+                onClick={() => setFilterTab("all")}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-semibold transition ${
+                  filterTab === "all" ? "bg-pink-500 text-white shadow-md shadow-pink-500/30" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Layers className="h-4 w-4" />
+                <span>All Stories ({stories.length})</span>
+              </button>
+
+              <button
+                onClick={() => setFilterTab("videos")}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-semibold transition ${
+                  filterTab === "videos" ? "bg-pink-500 text-white shadow-md shadow-pink-500/30" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Film className="h-4 w-4" />
+                <span>Video Stories Only ({videoCount})</span>
+              </button>
+
+              <button
+                onClick={() => setFilterTab("photos")}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-semibold transition ${
+                  filterTab === "photos" ? "bg-pink-500 text-white shadow-md shadow-pink-500/30" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <ImageIcon className="h-4 w-4" />
+                <span>Photo Stories Only ({photoCount})</span>
+              </button>
+            </div>
 
             <button
               onClick={handleDownloadAllZip}
@@ -160,19 +199,20 @@ export default function StoryDownloader() {
               ) : (
                 <Download className="h-4 w-4" />
               )}
-              <span>{zipping ? "Packaging Stories ZIP..." : "Download All Stories (ZIP)"}</span>
+              <span>{zipping ? "Packaging Stories ZIP..." : "Download Filtered Stories (ZIP)"}</span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stories.map((story, idx) => {
-              const isVideo = videoState[idx] || story.type === "video" || story.url.includes(".mp4") || story.url.includes("/t50.");
+            {filteredStories.map((story, fIdx) => {
+              const origIdx = stories.indexOf(story);
+              const isVideo = videoState[origIdx] || story.type === "video" || story.url.includes(".mp4") || story.url.includes("/t50.");
               const proxyVideoUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}&type=video`;
               const proxyImageUrl = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}`;
               const proxyMp3Url = `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(story.url)}&format=mp3`;
 
               return (
-                <div key={idx} className="glass-panel rounded-2xl overflow-hidden relative group border border-white/10 flex flex-col justify-between">
+                <div key={fIdx} className="glass-panel rounded-2xl overflow-hidden relative group border border-white/10 flex flex-col justify-between">
                   <div className="aspect-[9/16] bg-black/40 relative flex items-center justify-center overflow-hidden">
                     <div className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[9px] uppercase font-extrabold text-pink-400 tracking-wider z-10 flex items-center space-x-1">
                       {isVideo ? (
@@ -193,7 +233,7 @@ export default function StoryDownloader() {
                       <img 
                         src={proxyImageUrl} 
                         alt="" 
-                        onError={() => markAsVideo(idx)} 
+                        onError={() => markAsVideo(origIdx)} 
                         className="w-full h-full object-cover" 
                       />
                     )}
@@ -204,7 +244,7 @@ export default function StoryDownloader() {
                     <div className="flex items-center gap-2">
                       <a
                         href={isVideo ? proxyVideoUrl : proxyImageUrl}
-                        download={`story_${idx + 1}.${isVideo ? 'mp4' : 'jpg'}`}
+                        download={`story_${fIdx + 1}.${isVideo ? 'mp4' : 'jpg'}`}
                         className="flex-1 gradient-btn text-white font-semibold rounded-lg py-2 text-xs flex items-center justify-center space-x-1.5 shadow-md hover:brightness-110 transition"
                       >
                         <Download className="h-3.5 w-3.5" />
@@ -213,7 +253,7 @@ export default function StoryDownloader() {
 
                       <a
                         href={proxyMp3Url}
-                        download={`story_${idx + 1}.mp3`}
+                        download={`story_${fIdx + 1}.mp3`}
                         className="bg-white/10 hover:bg-white/20 text-pink-300 font-semibold rounded-lg px-2.5 py-2 text-xs flex items-center justify-center space-x-1 transition border border-white/10"
                         title="Download Audio Only (MP3)"
                       >
