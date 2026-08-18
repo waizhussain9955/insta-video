@@ -3,7 +3,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { Download, AlertCircle, Loader2, PlayCircle, Eye, Music, Film, Play, Image as ImageIcon, Layers } from "lucide-react";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, requestDownloaderApi } from "../config";
 import JSZip from "jszip";
 
 interface StoryItem {
@@ -34,11 +34,11 @@ export default function StoryDownloader() {
     setBrokenState({});
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/download`, {
+      const data = await requestDownloaderApi({
         type: "stories",
         username: targetInput
       });
-      const fetchedStories = response.data.stories || [];
+      const fetchedStories = data.stories || [];
       setStories(fetchedStories);
       
       const initialVidState: Record<number, boolean> = {};
@@ -49,7 +49,7 @@ export default function StoryDownloader() {
       });
       setVideoState(initialVidState);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to fetch stories/highlights. Please verify link or username is public.");
+      setError(err.response?.data?.error || err.message || "Failed to fetch stories/highlights. Please verify link or username is public.");
     } finally {
       setLoading(false);
     }

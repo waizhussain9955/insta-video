@@ -3,7 +3,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { Download, AlertCircle, Loader2, Library, CheckSquare, Square, Film, Music, Play, Sparkles } from "lucide-react";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, requestDownloaderApi } from "../config";
 import JSZip from "jszip";
 
 interface ProfileVideo {
@@ -53,13 +53,13 @@ export default function BulkVideoDownloader() {
     setBrokenPosts({});
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/download`, {
+      const data = await requestDownloaderApi({
         type: "bulk-video",
         username: cleanTarget,
         url: cleanTarget,
         limit
       });
-      const fetchedPosts = response.data.posts || [];
+      const fetchedPosts = data.posts || [];
       if (fetchedPosts.length === 0) {
         setError("No public reels or videos found for this account. Please check the username or link.");
       } else {
@@ -67,7 +67,7 @@ export default function BulkVideoDownloader() {
         setSelected(fetchedPosts.map((p: ProfileVideo) => p.id));
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || "Could not fetch profile videos. Please verify the account is public.");
+      setError(err.response?.data?.error || err.message || "Could not fetch profile videos. Please verify the account is public.");
     } finally {
       setLoading(false);
     }

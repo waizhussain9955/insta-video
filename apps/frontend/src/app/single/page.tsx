@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import { Download, AlertCircle, Loader2, Sparkles, RefreshCw, Music } from "lucide-react";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, requestDownloaderApi } from "../config";
 
 interface MediaItem {
   url: string;
@@ -47,13 +47,13 @@ function SingleDownloaderContent() {
     setResult(null);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/download`, {
+      const data = await requestDownloaderApi({
         type: "single",
         url: targetUrl
       });
-      setResult(response.data);
+      setResult(data);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to fetch Instagram media. Please try again.");
+      setError(err.response?.data?.error || err.message || "Failed to fetch Instagram media. Please try again.");
     } finally {
       setLoading(false);
     }
