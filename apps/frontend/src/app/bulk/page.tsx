@@ -29,9 +29,14 @@ export default function BulkVideoDownloader() {
     if (clean.includes("?")) {
       clean = clean.split("?")[0];
     }
-    const match = clean.match(/(?:instagram\.com\/)?([a-zA-Z0-9_\.]+)/i);
-    if (match && !["reels", "stories", "p", "reel"].includes(match[1].toLowerCase())) {
-      return match[1];
+    clean = clean.replace(/^https?:\/\/(?:www\.)?instagram\.com\//i, "");
+    clean = clean.replace(/^[\/@]+|[\/@]+$/g, "");
+    const parts = clean.split("/");
+    for (const part of parts) {
+      const trimmedPart = part.replace("@", "").trim();
+      if (trimmedPart && !["reels", "stories", "p", "reel", "tv", "s"].includes(trimmedPart.toLowerCase())) {
+        return trimmedPart;
+      }
     }
     return clean.replace("@", "");
   };
@@ -51,11 +56,16 @@ export default function BulkVideoDownloader() {
       const response = await axios.post(`${API_BASE_URL}/api/download`, {
         type: "bulk-video",
         username: cleanTarget,
+        url: cleanTarget,
         limit
       });
       const fetchedPosts = response.data.posts || [];
-      setPosts(fetchedPosts);
-      setSelected(fetchedPosts.map((p: ProfileVideo) => p.id));
+      if (fetchedPosts.length === 0) {
+        setError("No public reels or videos found for this account. Please check the username or link.");
+      } else {
+        setPosts(fetchedPosts);
+        setSelected(fetchedPosts.map((p: ProfileVideo) => p.id));
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || "Could not fetch profile videos. Please verify the account is public.");
     } finally {
