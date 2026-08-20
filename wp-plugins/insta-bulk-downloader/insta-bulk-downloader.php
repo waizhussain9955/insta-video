@@ -197,6 +197,7 @@ class InstaBulkDownloader {
                     <div class="insta-bulk-toolbar">
                         <div class="insta-toolbar-left">
                             <button type="button" class="insta-tool-btn btn-select-all">Select All</button>
+                            <button type="button" class="insta-tool-btn btn-select-page">Select Page</button>
                             <button type="button" class="insta-tool-btn btn-deselect-all">Deselect All</button>
                             <span class="insta-selected-badge">Selected: <b class="sel-count">0</b></span>
                         </div>
@@ -218,7 +219,11 @@ class InstaBulkDownloader {
                         </div>
                     </div>
 
+                    <div class="insta-pagination-bar insta-pagination-top"></div>
+
                     <div class="insta-bulk-grid"></div>
+
+                    <div class="insta-pagination-bar insta-pagination-bottom"></div>
                 </div>
             </div>
         </div>

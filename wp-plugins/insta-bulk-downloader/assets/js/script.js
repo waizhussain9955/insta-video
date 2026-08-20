@@ -14,15 +14,20 @@ jQuery(document).ready(function ($) {
         const $selCount = $wrapper.find('.sel-count');
         const $zipCount = $wrapper.find('.zip-count');
         const $btnSelectAll = $wrapper.find('.btn-select-all');
+        const $btnSelectPage = $wrapper.find('.btn-select-page');
         const $btnDeselectAll = $wrapper.find('.btn-deselect-all');
         const $zipBtn = $wrapper.find('.insta-zip-btn');
         const $progress = $wrapper.find('.insta-zip-progress');
         const $progressFill = $wrapper.find('.insta-progress-fill');
         const $progressPct = $wrapper.find('.progress-pct');
         const $progressStatus = $wrapper.find('.progress-status');
+        const $pagTop = $wrapper.find('.insta-pagination-top');
+        const $pagBottom = $wrapper.find('.insta-pagination-bottom');
 
         let fetchedPosts = [];
         let selectedIds = new Set();
+        let currentPage = 1;
+        let pageSize = 12;
 
         $form.on('submit', async function (e) {
             e.preventDefault();
@@ -32,10 +37,13 @@ jQuery(document).ready(function ($) {
             $alert.hide().removeClass('error success').text('');
             $results.hide();
             $grid.html('');
+            $pagTop.html('');
+            $pagBottom.html('');
             $submitBtn.prop('disabled', true);
             $btnText.hide();
             $btnLoader.show();
             selectedIds.clear();
+            currentPage = 1;
 
             try {
                 const endpoint = `${apiUrl.replace(/\/$/, '')}/api/download`;
@@ -61,7 +69,13 @@ jQuery(document).ready(function ($) {
                     throw new Error('No public reels or MP4 videos found for this Instagram account.');
                 }
 
+                // Select all by default
+                fetchedPosts.forEach((post, idx) => {
+                    selectedIds.add(post.id || `post_${idx}`);
+                });
+
                 renderBulkGrid();
+                $results.fadeIn();
             } catch (err) {
                 $alert.addClass('error').text(err.message).fadeIn();
             } finally {
@@ -72,18 +86,28 @@ jQuery(document).ready(function ($) {
         });
 
         function renderBulkGrid() {
+            const total = fetchedPosts.length;
+            const totalPages = Math.max(1, Math.ceil(total / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, total);
+            const pagePosts = fetchedPosts.slice(startIndex, endIndex);
+
+            // Render Video Grid
             let html = '';
-            fetchedPosts.forEach((post, idx) => {
-                const id = post.id || `post_${idx}`;
-                selectedIds.add(id);
+            pagePosts.forEach((post, idx) => {
+                const id = post.id || `post_${startIndex + idx}`;
+                const isSelected = selectedIds.has(id);
                 const videoUrl = post.video_url || post.url;
                 const proxyUrl = `${apiUrl.replace(/\/$/, '')}/api/proxy?url=${encodeURIComponent(videoUrl)}`;
                 const audioProxy = `${apiUrl.replace(/\/$/, '')}/api/proxy?url=${encodeURIComponent(videoUrl)}&format=mp3`;
 
                 html += `
-                    <div class="insta-bulk-item selected" data-id="${id}" data-url="${videoUrl}">
+                    <div class="insta-bulk-item ${isSelected ? 'selected' : ''}" data-id="${id}" data-url="${videoUrl}">
                         <div class="insta-select-overlay">
-                            <input type="checkbox" class="insta-checkbox" checked />
+                            <input type="checkbox" class="insta-checkbox" ${isSelected ? 'checked' : ''} />
                         </div>
                         <div class="insta-thumb-container">
                             <video src="${videoUrl}" playsinline poster="${post.preview || ''}" preload="metadata" muted onmouseover="this.play()" onmouseout="this.pause()"></video>
@@ -103,9 +127,99 @@ jQuery(document).ready(function ($) {
             });
 
             $grid.html(html);
+
+            // Render Pagination Bar HTML
+            renderPaginationControls(totalPages, startIndex, endIndex, total);
             updateSelectionCounts();
-            $results.fadeIn();
         }
+
+        function renderPaginationControls(totalPages, startIndex, endIndex, total) {
+            if (total <= 0) {
+                $pagTop.hide();
+                $pagBottom.hide();
+                return;
+            }
+
+            let btnsHtml = `
+                <button type="button" class="insta-page-btn insta-page-prev" ${currentPage === 1 ? 'disabled' : ''} title="Previous Page">
+                    &laquo;
+                </button>
+            `;
+
+            for (let p = 1; p <= totalPages; p++) {
+                btnsHtml += `
+                    <button type="button" class="insta-page-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">
+                        ${p}
+                    </button>
+                `;
+            }
+
+            btnsHtml += `
+                <button type="button" class="insta-page-btn insta-page-next" ${currentPage === totalPages ? 'disabled' : ''} title="Next Page">
+                    &raquo;
+                </button>
+            `;
+
+            const pagHtml = `
+                <div class="insta-pagination-info">
+                    <span>Page <b>${currentPage}</b> of <b>${totalPages}</b></span>
+                    <span>•</span>
+                    <span>Showing <b>${startIndex + 1}–${endIndex}</b> of <b>${total}</b> Videos</span>
+                </div>
+                <div class="insta-pagination-controls">
+                    <div class="insta-per-page-wrap">
+                        <span>Show:</span>
+                        <select class="insta-per-page-select">
+                            <option value="12" ${pageSize === 12 ? 'selected' : ''}>12 / page</option>
+                            <option value="24" ${pageSize === 24 ? 'selected' : ''}>24 / page</option>
+                            <option value="50" ${pageSize === 50 ? 'selected' : ''}>50 / page</option>
+                        </select>
+                    </div>
+                    <div class="insta-page-btns">
+                        ${btnsHtml}
+                    </div>
+                </div>
+            `;
+
+            $pagTop.html(pagHtml).show();
+            if (totalPages > 1) {
+                $pagBottom.html(pagHtml).show();
+            } else {
+                $pagBottom.hide();
+            }
+        }
+
+        // Pagination Events (Delegated)
+        $wrapper.on('click', '.insta-page-btn:not(:disabled)', function () {
+            const $btn = $(this);
+            if ($btn.hasClass('insta-page-prev')) {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderBulkGrid();
+                }
+            } else if ($btn.hasClass('insta-page-next')) {
+                const totalPages = Math.ceil(fetchedPosts.length / pageSize);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderBulkGrid();
+                }
+            } else {
+                const p = parseInt($btn.data('page'));
+                if (p && p !== currentPage) {
+                    currentPage = p;
+                    renderBulkGrid();
+                }
+            }
+        });
+
+        $wrapper.on('change', '.insta-per-page-select', function () {
+            const newSize = parseInt($(this).val()) || 12;
+            if (newSize !== pageSize) {
+                pageSize = newSize;
+                currentPage = 1;
+                renderBulkGrid();
+            }
+        });
 
         function updateSelectionCounts() {
             const count = selectedIds.size;
@@ -128,6 +242,16 @@ jQuery(document).ready(function ($) {
         });
 
         $btnSelectAll.on('click', function () {
+            fetchedPosts.forEach((post, idx) => {
+                selectedIds.add(post.id || `post_${idx}`);
+            });
+            $grid.find('.insta-bulk-item').each(function () {
+                $(this).addClass('selected').find('.insta-checkbox').prop('checked', true);
+            });
+            updateSelectionCounts();
+        });
+
+        $btnSelectPage.on('click', function () {
             $grid.find('.insta-bulk-item').each(function () {
                 const id = $(this).data('id');
                 selectedIds.add(id);
@@ -142,7 +266,7 @@ jQuery(document).ready(function ($) {
             updateSelectionCounts();
         });
 
-        // ZIP Packaging via JSZip
+        // ZIP Packaging via JSZip across all selected videos
         $zipBtn.on('click', async function () {
             if (selectedIds.size === 0 || typeof JSZip === 'undefined') return;
 
@@ -194,7 +318,7 @@ jQuery(document).ready(function ($) {
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(downloadUrl);
+            setTimeout(() => URL.revokeObjectURL(downloadUrl), 5000);
 
             $progressStatus.text('ZIP download complete!');
             $progressFill.css('width', '100%');

@@ -69,8 +69,8 @@ class InstaBulkDownloader {
             <form id="insta-bulk-form" class="insta-form-grid">
                 <input type="text" id="insta-username" placeholder="Username (e.g. cristiano)" required class="insta-input" />
                 <select id="insta-limit" class="insta-select">
-                    <option value="10">10 Posts</option>
-                    <option value="20">20 Posts</option>
+                    <option value="12">12 Posts</option>
+                    <option value="24">24 Posts</option>
                     <option value="50">50 Posts</option>
                 </select>
                 <button type="submit" class="insta-submit-btn">Fetch Profile</button>

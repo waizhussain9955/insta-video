@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
-import { Download, AlertCircle, Loader2, Library, CheckSquare, Square, Film, Music, Play, Sparkles } from "lucide-react";
+import { Download, AlertCircle, Loader2, Library, CheckSquare, Square, Film, Music, Play, Sparkles, ChevronLeft, ChevronRight, Layers } from "lucide-react";
 import { API_BASE_URL, getProxyUrl, requestDownloaderApi } from "../config";
 import { convertMediaUrlToMp3Blob, triggerBlobDownload } from "../utils/audioConverter";
 import JSZip from "jszip";
@@ -24,6 +24,8 @@ export default function BulkVideoDownloader() {
   const [posts, setPosts] = useState<ProfileVideo[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [brokenPosts, setBrokenPosts] = useState<Record<string, boolean>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
 
   const cleanInput = (raw: string) => {
     let clean = raw.trim();
@@ -95,6 +97,17 @@ export default function BulkVideoDownloader() {
   };
 
   const validPosts = posts.filter(p => !brokenPosts[p.id]);
+  const totalPages = Math.max(1, Math.ceil(validPosts.length / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, validPosts.length);
+  const paginatedPosts = validPosts.slice(startIndex, endIndex);
+
+  const selectCurrentPage = () => {
+    const pageIds = paginatedPosts.map(p => p.id);
+    const newSelected = Array.from(new Set([...selected, ...pageIds]));
+    setSelected(newSelected);
+  };
 
   const handleBulkDownload = async () => {
     if (selected.length === 0) return;
@@ -182,15 +195,18 @@ export default function BulkVideoDownloader() {
           />
         </div>
         <div>
-          <label className="text-xs text-zinc-400 mb-2 block">Video Count Limit</label>
+          <label className="text-xs text-zinc-400 mb-2 block">Harvest Limit</label>
           <select
             value={limit}
-            onChange={(e) => setLimit(Number(e.target.value))}
+            onChange={(e) => {
+              setLimit(Number(e.target.value));
+              setCurrentPage(1);
+            }}
             className="w-full glass-input text-white rounded-xl px-4 py-3.5 text-sm bg-zinc-900/90"
           >
-            <option value={12}>12 Videos</option>
-            <option value={24}>24 Videos</option>
-            <option value={50}>50 Videos</option>
+            <option value={12}>12 Videos (Page 1)</option>
+            <option value={24}>24 Videos (Pages 1 & 2)</option>
+            <option value={50}>50 Videos (Max Multi-Page)</option>
           </select>
         </div>
         <div className="sm:col-span-3">
@@ -204,7 +220,7 @@ export default function BulkVideoDownloader() {
             ) : (
               <Film className="h-4 w-4" />
             )}
-            <span>{loading ? "Harvesting Reels & Videos (High-Speed API)..." : "Fetch Reels & Videos"}</span>
+            <span>{loading ? "Harvesting Reels & Videos (Multi-Page Stream)..." : `Harvest ${limit} Reels & Videos`}</span>
           </button>
         </div>
       </form>
@@ -219,52 +235,132 @@ export default function BulkVideoDownloader() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="h-10 w-10 text-pink-500 animate-spin mb-4" />
-          <p className="text-zinc-400 text-sm">Harvesting MP4 video streams from profile reels...</p>
+          <p className="text-zinc-400 text-sm">Harvesting MP4 video streams from multiple reel timelines...</p>
         </div>
       )}
 
       {validPosts.length > 0 && (
-        <div className="glass-panel p-6 rounded-2xl animate-fade-in">
-          {/* Header Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-6 border-b border-white/10">
-            <div className="flex items-center space-x-4">
+        <div className="glass-panel p-6 rounded-2xl animate-fade-in space-y-6">
+          {/* Top Actions & Selection Bar */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-6 border-b border-white/10">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={selectAll}
-                className="flex items-center space-x-1.5 text-xs text-zinc-300 hover:text-white px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg transition border border-white/10"
+                className="flex items-center space-x-1.5 text-xs text-zinc-300 hover:text-white px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg transition border border-white/10"
+                title="Select all videos across all pages"
               >
                 <CheckSquare className="h-4 w-4 text-pink-500" />
-                <span>Select All Videos ({validPosts.length})</span>
+                <span>Select All ({validPosts.length})</span>
+              </button>
+              <button
+                onClick={selectCurrentPage}
+                className="flex items-center space-x-1.5 text-xs text-zinc-300 hover:text-white px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg transition border border-white/10"
+                title="Select only videos on this current page"
+              >
+                <Layers className="h-4 w-4 text-pink-400" />
+                <span>Select Current Page ({paginatedPosts.length})</span>
               </button>
               <button
                 onClick={deselectAll}
-                className="flex items-center space-x-1.5 text-xs text-zinc-300 hover:text-white px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg transition border border-white/10"
+                className="flex items-center space-x-1.5 text-xs text-zinc-300 hover:text-white px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg transition border border-white/10"
               >
                 <Square className="h-4 w-4 text-zinc-400" />
                 <span>Deselect All</span>
               </button>
             </div>
 
-            <button
-              onClick={handleBulkDownload}
-              disabled={selected.length === 0 || zipping}
-              className="gradient-btn text-white font-semibold rounded-xl px-6 py-3 text-xs flex items-center justify-center space-x-2 disabled:opacity-50 shadow-lg shadow-pink-500/20"
-            >
-              {zipping ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}
-              <span>{zipping ? "Packaging Videos into ZIP..." : `Download Selected Videos ZIP (${selected.length})`}</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <div className="text-xs text-zinc-400 bg-white/5 px-3 py-2 rounded-lg border border-white/10">
+                Selected: <span className="text-pink-400 font-bold">{selected.length}</span> / {validPosts.length}
+              </div>
+
+              <button
+                onClick={handleBulkDownload}
+                disabled={selected.length === 0 || zipping}
+                className="gradient-btn text-white font-semibold rounded-xl px-5 py-2.5 text-xs flex items-center justify-center space-x-2 disabled:opacity-50 shadow-lg shadow-pink-500/20"
+              >
+                {zipping ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                <span>{zipping ? "Packaging ZIP..." : `Download ZIP (${selected.length})`}</span>
+              </button>
+            </div>
           </div>
 
-          {/* Grid Layout */}
+          {/* Pagination Navigation Controls (Top) */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2 px-3 bg-white/5 rounded-xl border border-white/10">
+            <div className="text-xs text-zinc-300 flex items-center gap-2">
+              <span className="font-semibold text-pink-400">Page {safeCurrentPage} of {totalPages}</span>
+              <span className="text-zinc-500">•</span>
+              <span>Showing {startIndex + 1}–{endIndex} of {validPosts.length} Videos</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Page Size Selector */}
+              <div className="flex items-center space-x-2 text-xs text-zinc-400">
+                <span>Show:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-zinc-900 text-white rounded-lg px-2 py-1 text-xs border border-white/10 focus:outline-none"
+                >
+                  <option value={12}>12 / page</option>
+                  <option value={24}>24 / page</option>
+                  <option value={50}>50 / page</option>
+                </select>
+              </div>
+
+              {/* Page Buttons */}
+              <div className="flex items-center space-x-1">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={safeCurrentPage === 1}
+                  className="p-1.5 rounded-lg text-zinc-300 hover:text-white bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  title="Previous Page"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+                  <button
+                    key={pg}
+                    type="button"
+                    onClick={() => setCurrentPage(pg)}
+                    className={`h-7 w-7 rounded-lg text-xs font-semibold transition ${
+                      safeCurrentPage === pg
+                        ? "gradient-btn text-white shadow-md shadow-pink-500/30"
+                        : "text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10"
+                    }`}
+                  >
+                    {pg}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={safeCurrentPage === totalPages}
+                  className="p-1.5 rounded-lg text-zinc-300 hover:text-white bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  title="Next Page"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Grid Layout (Current Page) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {validPosts.map((post) => {
+            {paginatedPosts.map((post) => {
               const isSel = selected.includes(post.id);
               const proxyMediaUrl = getProxyUrl(post.preview || post.url);
               const directMediaDownloadUrl = getProxyUrl(post.url);
-              const directMp3DownloadUrl = getProxyUrl(post.url, "mp3");
 
               return (
                 <div
@@ -345,6 +441,58 @@ export default function BulkVideoDownloader() {
               );
             })}
           </div>
+
+          {/* Bottom Pagination Bar (If more than 1 page) */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t border-white/10">
+              <span className="text-xs text-zinc-400">
+                Page {safeCurrentPage} of {totalPages} ({validPosts.length} total videos)
+              </span>
+              <div className="flex items-center space-x-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentPage(prev => Math.max(1, prev - 1));
+                    window.scrollTo({ top: 400, behavior: 'smooth' });
+                  }}
+                  disabled={safeCurrentPage === 1}
+                  className="px-3 py-1.5 rounded-lg text-xs text-zinc-300 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                >
+                  Previous
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+                  <button
+                    key={pg}
+                    type="button"
+                    onClick={() => {
+                      setCurrentPage(pg);
+                      window.scrollTo({ top: 400, behavior: 'smooth' });
+                    }}
+                    className={`h-8 w-8 rounded-lg text-xs font-semibold transition ${
+                      safeCurrentPage === pg
+                        ? "gradient-btn text-white shadow-md shadow-pink-500/30"
+                        : "text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10"
+                    }`}
+                  >
+                    {pg}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                    window.scrollTo({ top: 400, behavior: 'smooth' });
+                  }}
+                  disabled={safeCurrentPage === totalPages}
+                  className="px-3 py-1.5 rounded-lg text-xs text-zinc-300 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

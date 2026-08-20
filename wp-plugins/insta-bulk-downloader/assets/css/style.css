@@ -277,3 +277,93 @@
     background: #8b5cf6;
     color: #fff;
 }
+
+/* Pagination Bar Styles */
+.insta-pagination-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    margin: 14px 0;
+}
+
+.insta-pagination-info {
+    font-size: 12px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.insta-pagination-info b {
+    color: #f1f5f9;
+}
+
+.insta-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.insta-per-page-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.insta-per-page-select {
+    background: #0f172a;
+    color: #f1f5f9;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.insta-page-btns {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.insta-page-btn {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.insta-page-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+.insta-page-btn.active {
+    background: var(--ib-btn-bg, #8b5cf6);
+    color: var(--ib-btn-text, #ffffff);
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+}
+
+.insta-page-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
