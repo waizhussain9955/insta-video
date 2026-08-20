@@ -140,24 +140,29 @@ async function fetchInstagramWebProfileReels(usernameInput: string, limit: numbe
     });
 
     const user = resp.data?.data?.user;
-    const edges = user?.edge_owner_to_timeline_media?.edges || [];
+    const timelineEdges = user?.edge_owner_to_timeline_media?.edges || [];
+    const felixEdges = user?.edge_felix_video_timeline?.edges || [];
+    const allEdges = [...felixEdges, ...timelineEdges];
     const posts: any[] = [];
+    const seenIds = new Set<string>();
 
-    for (const edge of edges) {
+    for (const edge of allEdges) {
       if (posts.length >= limit) break;
       const node = edge.node;
       const isVideo = node.is_video || false;
       const videoUrl = node.video_url;
       const displayUrl = node.display_url;
-      const shortcode = node.shortcode;
+      const shortcode = node.shortcode || node.id;
 
       if (node.edge_sidecar_to_children?.edges?.length > 0) {
         for (const cEdge of node.edge_sidecar_to_children.edges) {
           if (posts.length >= limit) break;
           const cNode = cEdge.node;
-          if (cNode.is_video && cNode.video_url) {
+          const cId = cNode.shortcode || `${shortcode}_${cNode.id || Date.now()}`;
+          if (cNode.is_video && cNode.video_url && !seenIds.has(cId)) {
+            seenIds.add(cId);
             posts.push({
-              id: cNode.shortcode || `${shortcode}_${cNode.id || Date.now()}`,
+              id: cId,
               url: cNode.video_url,
               video_url: cNode.video_url,
               type: "video",
@@ -165,7 +170,8 @@ async function fetchInstagramWebProfileReels(usernameInput: string, limit: numbe
             });
           }
         }
-      } else if (isVideo && videoUrl) {
+      } else if (isVideo && videoUrl && !seenIds.has(shortcode)) {
+        seenIds.add(shortcode);
         posts.push({
           id: shortcode,
           url: videoUrl,

@@ -82,24 +82,30 @@ function fetchInstagramWebProfileReelsPHP($usernameInput, $limit = 12) {
         if ($code === 200 && !empty($res)) {
             $data = json_decode($res, true);
             $user = $data['data']['user'] ?? [];
-            $edges = $user['edge_owner_to_timeline_media']['edges'] ?? [];
+            $timelineEdges = $user['edge_owner_to_timeline_media']['edges'] ?? [];
+            $felixEdges = $user['edge_felix_video_timeline']['edges'] ?? [];
+            $allEdges = array_merge($felixEdges, $timelineEdges);
 
             $posts = [];
-            foreach ($edges as $edge) {
+            $seenIds = [];
+
+            foreach ($allEdges as $edge) {
                 if (count($posts) >= $limit) break;
                 $node = $edge['node'] ?? [];
                 $isVideo = $node['is_video'] ?? false;
                 $videoUrl = $node['video_url'] ?? null;
                 $displayUrl = $node['display_url'] ?? null;
-                $shortcode = $node['shortcode'] ?? '';
+                $shortcode = $node['shortcode'] ?? ($node['id'] ?? uniqid());
 
                 if (!empty($node['edge_sidecar_to_children']['edges'])) {
                     foreach ($node['edge_sidecar_to_children']['edges'] as $cEdge) {
                         if (count($posts) >= $limit) break;
                         $cNode = $cEdge['node'] ?? [];
-                        if (($cNode['is_video'] ?? false) && !empty($cNode['video_url'])) {
+                        $cId = $cNode['shortcode'] ?? ($shortcode . '_' . ($cNode['id'] ?? uniqid()));
+                        if (($cNode['is_video'] ?? false) && !empty($cNode['video_url']) && !isset($seenIds[$cId])) {
+                            $seenIds[$cId] = true;
                             $posts[] = [
-                                'id' => $cNode['shortcode'] ?? ($shortcode . '_' . ($cNode['id'] ?? uniqid())),
+                                'id' => $cId,
                                 'url' => $cNode['video_url'],
                                 'video_url' => $cNode['video_url'],
                                 'type' => 'video',
@@ -107,7 +113,8 @@ function fetchInstagramWebProfileReelsPHP($usernameInput, $limit = 12) {
                             ];
                         }
                     }
-                } else if ($isVideo && $videoUrl) {
+                } else if ($isVideo && $videoUrl && !isset($seenIds[$shortcode])) {
+                    $seenIds[$shortcode] = true;
                     $posts[] = [
                         'id' => $shortcode,
                         'url' => $videoUrl,
