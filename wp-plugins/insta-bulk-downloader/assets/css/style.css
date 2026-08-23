@@ -1,9 +1,25 @@
-/* Instagram Bulk Downloader Stylesheet */
+/* Instagram Bulk Video Harvester - Gutenberg & Kadence Compatible Styles */
+:root {
+    --ib-bg: #09090b;
+    --ib-border: rgba(255, 255, 255, 0.12);
+    --ib-radius: 16px;
+    --ib-title: #ffffff;
+    --ib-text: #94a3b8;
+    --ib-input-bg: rgba(255, 255, 255, 0.05);
+    --ib-input-text: #ffffff;
+    --ib-btn-bg: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+    --ib-btn-text: #ffffff;
+    --ib-zip-bg: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --ib-zip-text: #ffffff;
+    --ib-max-width: 1050px;
+    --ib-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
 
 .insta-bulk-wrapper {
-    max-width: var(--ib-max-width, 950px);
-    margin: 30px auto;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    width: 100%;
+    max-width: var(--ib-max-width, 1050px);
+    margin: 24px auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     box-sizing: border-box;
 }
 
@@ -12,39 +28,55 @@
 }
 
 .insta-bulk-card {
-    background: var(--ib-bg, rgba(24, 24, 27, 0.85));
-    backdrop-filter: blur(var(--ib-blur, 16px));
-    -webkit-backdrop-filter: blur(var(--ib-blur, 16px));
-    border: 1px solid var(--ib-border, rgba(255, 255, 255, 0.1));
-    border-radius: var(--ib-radius, 16px);
-    padding: 32px 28px;
-    box-shadow: var(--ib-shadow, 0 20px 40px rgba(0, 0, 0, 0.3));
+    background: var(--ib-bg, #09090b);
+    border: 1px solid var(--ib-border, rgba(255, 255, 255, 0.12));
+    border-radius: var(--iv-radius, 16px);
+    padding: 32px 24px;
+    box-shadow: var(--ib-shadow, 0 20px 40px rgba(0,0,0,0.6));
+    backdrop-filter: blur(12px);
+    color: var(--ib-text, #94a3b8);
+}
+
+.insta-header {
+    text-align: center;
+    margin-bottom: 24px;
 }
 
 .insta-badge-bulk {
-    background: rgba(139, 92, 246, 0.15);
-    color: #a78bfa;
-    border: 1px solid rgba(139, 92, 246, 0.25);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(236, 72, 153, 0.12);
+    color: #f472b6;
+    border: 1px solid rgba(236, 72, 153, 0.25);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
 }
 
-.insta-bulk-title {
-    margin: 0 0 8px 0;
-    font-size: 26px;
+.insta-title {
+    font-size: clamp(20px, 3.5vw, 28px);
     font-weight: 800;
     color: var(--ib-title, #ffffff);
+    margin: 0 0 8px 0;
+    line-height: 1.25;
 }
 
-.insta-bulk-subtitle {
+.insta-subtitle {
+    font-size: 13px;
+    color: var(--ib-text, #94a3b8);
     margin: 0;
-    font-size: 14px;
-    color: var(--ib-text, #a1a1aa);
+    line-height: 1.5;
 }
 
 .insta-form-grid {
     display: grid;
-    grid-template-columns: 1fr 140px 190px;
+    grid-template-columns: 1fr 160px 180px;
     gap: 12px;
-    align-items: center;
 }
 
 @media (max-width: 768px) {
@@ -53,100 +85,163 @@
     }
 }
 
+.insta-input-group {
+    position: relative;
+}
+
+.insta-input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #ec4899;
+    font-weight: 800;
+    font-size: 16px;
+}
+
 .insta-bulk-input {
-    width: 100% !important;
-    padding: 14px 16px 14px 38px !important;
-    background: var(--ib-input-bg, rgba(255, 255, 255, 0.05)) !important;
-    color: var(--ib-input-text, #ffffff) !important;
-    border: 1px solid var(--ib-border, rgba(255, 255, 255, 0.12)) !important;
-    border-radius: 12px !important;
-    font-size: 14px !important;
-    outline: none !important;
+    width: 100%;
+    background: var(--ib-input-bg, rgba(255, 255, 255, 0.05));
+    color: var(--ib-input-text, #ffffff);
+    border: 1px solid var(--ib-border, rgba(255, 255, 255, 0.15));
+    border-radius: 12px;
+    padding: 14px 14px 14px 40px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .insta-bulk-input:focus {
-    border-color: #8b5cf6 !important;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
+    border-color: #ec4899;
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.25);
 }
 
 .insta-bulk-limit {
-    width: 100% !important;
-    padding: 14px 12px !important;
-    background: var(--ib-input-bg, rgba(255, 255, 255, 0.05)) !important;
-    color: var(--ib-input-text, #ffffff) !important;
-    border: 1px solid var(--ib-border, rgba(255, 255, 255, 0.12)) !important;
-    border-radius: 12px !important;
-    font-size: 14px !important;
-    cursor: pointer !important;
-    outline: none !important;
+    width: 100%;
+    background: var(--ib-input-bg, rgba(255, 255, 255, 0.05));
+    color: var(--ib-input-text, #ffffff);
+    border: 1px solid var(--ib-border, rgba(255, 255, 255, 0.15));
+    border-radius: 12px;
+    padding: 14px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+}
+
+.insta-bulk-limit option {
+    background: #09090b;
+    color: #ffffff;
 }
 
 .insta-bulk-submit {
     width: 100%;
-    padding: 14px 18px;
-    background: var(--ib-btn-bg, linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #6366f1 100%));
+    background: var(--ib-btn-bg, linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%));
     color: var(--ib-btn-text, #ffffff);
     border: none;
     border-radius: 12px;
-    font-size: 14px;
+    padding: 14px 18px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.35);
-    transition: all 0.2s ease;
+    box-shadow: 0 8px 20px rgba(236, 72, 153, 0.3);
+    transition: transform 0.2s, filter 0.2s;
 }
 
-.insta-bulk-submit:hover {
+.insta-bulk-submit:hover:not(:disabled) {
     filter: brightness(1.1);
     transform: translateY(-1px);
 }
 
+.insta-bulk-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.insta-spin {
+    animation: instaSpin 1s linear infinite;
+}
+
+@keyframes instaSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.insta-bulk-alert {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-top: 16px;
+    display: none;
+}
+
+.insta-bulk-alert.error {
+    display: block;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+}
+
+.insta-bulk-results {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: none;
+}
+
+/* Toolbar */
 .insta-bulk-toolbar {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
     flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
     gap: 12px;
-    padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    margin: 20px 0 16px 0;
+    margin-bottom: 14px;
 }
 
 .insta-toolbar-left {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .insta-tool-btn {
     background: rgba(255, 255, 255, 0.08);
-    color: #e2e8f0;
+    color: #cbd5e1;
     border: 1px solid rgba(255, 255, 255, 0.12);
     padding: 6px 12px;
+    border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
-    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .insta-tool-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
 }
 
 .insta-selected-badge {
     font-size: 12px;
     color: #94a3b8;
-    margin-left: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.insta-selected-badge b {
+    color: #f472b6;
 }
 
 .insta-zip-btn {
-    background: var(--ib-zip-bg, #10b981);
+    background: var(--ib-zip-bg, linear-gradient(135deg, #10b981 0%, #059669 100%));
     color: var(--ib-zip-text, #ffffff);
     border: none;
     padding: 8px 16px;
@@ -154,24 +249,31 @@
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 6px;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
-    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    transition: all 0.2s;
 }
 
-.insta-zip-btn:hover {
+.insta-zip-btn:hover:not(:disabled) {
     filter: brightness(1.1);
     transform: translateY(-1px);
 }
 
+.insta-zip-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ZIP Progress */
 .insta-zip-progress {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     padding: 12px 16px;
-    background: rgba(16, 185, 129, 0.08);
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.25);
     border-radius: 10px;
+    display: none;
 }
 
 .insta-progress-info {
@@ -196,95 +298,13 @@
     transition: width 0.2s ease;
 }
 
-.insta-bulk-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
-}
-
-.insta-bulk-item {
-    position: relative;
-    background: var(--ib-card-bg, rgba(255, 255, 255, 0.03));
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.2s ease, border-color 0.2s ease;
-}
-
-.insta-bulk-item.selected {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
-}
-
-.insta-bulk-item:hover {
-    transform: translateY(-2px);
-}
-
-.insta-select-overlay {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    z-index: 10;
-}
-
-.insta-checkbox {
-    width: 20px;
-    height: 20px;
-    accent-color: #8b5cf6;
-    cursor: pointer;
-}
-
-.insta-thumb-container {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 9/16;
-    background: #000;
-    overflow: hidden;
-}
-
-.insta-thumb-container video, .insta-thumb-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.insta-item-footer {
-    padding: 10px;
-    display: flex;
-    gap: 6px;
-}
-
-.insta-mini-btn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 8px;
-    background: rgba(255, 255, 255, 0.08);
-    color: #ffffff;
-    text-decoration: none;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    transition: background 0.2s;
-}
-
-.insta-mini-btn:hover {
-    background: #8b5cf6;
-    color: #fff;
-}
-
-/* Pagination Bar Styles */
+/* Pagination Bar */
 .insta-pagination-bar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
     padding: 10px 14px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -319,7 +339,7 @@
 }
 
 .insta-per-page-select {
-    background: #0f172a;
+    background: #09090b;
     color: #f1f5f9;
     border: 1px solid rgba(255, 255, 255, 0.15);
     padding: 4px 8px;
@@ -357,13 +377,123 @@
 }
 
 .insta-page-btn.active {
-    background: var(--ib-btn-bg, #8b5cf6);
-    color: var(--ib-btn-text, #ffffff);
+    background: var(--ib-btn-bg, linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%));
+    color: #ffffff;
     border-color: transparent;
-    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 2px 8px rgba(236, 72, 153, 0.4);
 }
 
 .insta-page-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
+}
+
+/* Bulk Grid */
+.insta-bulk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.insta-bulk-item {
+    position: relative;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.insta-bulk-item.selected {
+    border-color: #ec4899;
+    box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.35);
+}
+
+.insta-select-overlay {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+}
+
+.insta-checkbox {
+    width: 20px;
+    height: 20px;
+    accent-color: #ec4899;
+    cursor: pointer;
+}
+
+.insta-thumb-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 9/16;
+    background: #000000;
+    overflow: hidden;
+}
+
+.insta-thumb-container video,
+.insta-thumb-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.insta-item-footer {
+    padding: 10px;
+    display: flex;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.insta-mini-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 7px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    transition: background 0.2s;
+}
+
+.insta-mini-btn:hover {
+    background: #ec4899;
+    color: #ffffff;
+}
+
+/* Light Theme Preset */
+.insta-theme-light {
+    --ib-bg: #ffffff;
+    --ib-border: #e2e8f0;
+    --ib-title: #0f172a;
+    --ib-text: #64748b;
+    --ib-input-bg: #f8fafc;
+    --ib-input-text: #0f172a;
+    --ib-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+}
+.insta-theme-light .insta-bulk-item {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+.insta-theme-light .insta-pagination-bar {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+}
+.insta-theme-light .insta-per-page-select {
+    background: #ffffff;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+.insta-theme-light .insta-page-btn {
+    background: #e2e8f0;
+    color: #0f172a;
+    border-color: #cbd5e1;
 }

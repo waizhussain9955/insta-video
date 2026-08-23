@@ -1,38 +1,38 @@
-/* Instagram Story Downloader - Gutenberg & Kadence Compatible Styles */
+/* Instagram Audio/MP3 Downloader - Gutenberg & Kadence Compatible Styles */
 :root {
-    --is-bg: #09090b;
-    --is-border: rgba(255, 255, 255, 0.12);
-    --is-radius: 16px;
-    --is-title: #ffffff;
-    --is-text: #94a3b8;
-    --is-input-bg: rgba(255, 255, 255, 0.05);
-    --is-input-text: #ffffff;
-    --is-btn-bg: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-    --is-btn-text: #ffffff;
-    --is-max-width: 800px;
-    --is-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    --ia-bg: #09090b;
+    --ia-border: rgba(255, 255, 255, 0.12);
+    --ia-radius: 16px;
+    --ia-title: #ffffff;
+    --ia-text: #94a3b8;
+    --ia-input-bg: rgba(255, 255, 255, 0.05);
+    --ia-input-text: #ffffff;
+    --ia-btn-bg: linear-gradient(135deg, #a855f7 0%, #d946ef 100%);
+    --ia-btn-text: #ffffff;
+    --ia-max-width: 680px;
+    --ia-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
-.insta-story-wrapper {
+.insta-audio-wrapper {
     width: 100%;
-    max-width: var(--is-max-width, 800px);
+    max-width: var(--ia-max-width, 680px);
     margin: 24px auto;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     box-sizing: border-box;
 }
 
-.insta-story-wrapper * {
+.insta-audio-wrapper * {
     box-sizing: border-box;
 }
 
-.insta-story-card {
-    background: var(--is-bg, #09090b);
-    border: 1px solid var(--is-border, rgba(255, 255, 255, 0.12));
-    border-radius: var(--is-radius, 16px);
+.insta-audio-card {
+    background: var(--ia-bg, #09090b);
+    border: 1px solid var(--ia-border, rgba(255, 255, 255, 0.12));
+    border-radius: var(--ia-radius, 16px);
     padding: 32px 24px;
-    box-shadow: var(--is-shadow, 0 20px 40px rgba(0,0,0,0.6));
+    box-shadow: var(--ia-shadow, 0 20px 40px rgba(0,0,0,0.6));
     backdrop-filter: blur(12px);
-    color: var(--is-text, #94a3b8);
+    color: var(--ia-text, #94a3b8);
 }
 
 .insta-header {
@@ -40,13 +40,13 @@
     margin-bottom: 24px;
 }
 
-.insta-badge-story {
+.insta-badge-audio {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(245, 158, 11, 0.15);
-    color: #fbbf24;
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.3);
     padding: 4px 12px;
     border-radius: 999px;
     font-size: 11px;
@@ -59,14 +59,14 @@
 .insta-title {
     font-size: clamp(20px, 3.5vw, 28px);
     font-weight: 800;
-    color: var(--is-title, #ffffff);
+    color: var(--ia-title, #ffffff);
     margin: 0 0 8px 0;
     line-height: 1.25;
 }
 
 .insta-subtitle {
     font-size: 13px;
-    color: var(--is-text, #94a3b8);
+    color: var(--ia-text, #94a3b8);
     margin: 0;
     line-height: 1.5;
 }
@@ -87,32 +87,32 @@
     left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    color: #f59e0b;
-    font-weight: 800;
-    font-size: 16px;
+    color: #c084fc;
+    display: flex;
+    align-items: center;
 }
 
 .insta-input {
     width: 100%;
-    background: var(--is-input-bg, rgba(255, 255, 255, 0.05));
-    color: var(--is-input-text, #ffffff);
-    border: 1px solid var(--is-border, rgba(255, 255, 255, 0.15));
+    background: var(--ia-input-bg, rgba(255, 255, 255, 0.05));
+    color: var(--ia-input-text, #ffffff);
+    border: 1px solid var(--ia-border, rgba(255, 255, 255, 0.15));
     border-radius: 12px;
-    padding: 14px 14px 14px 40px;
+    padding: 14px 14px 14px 44px;
     font-size: 14px;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .insta-input:focus {
-    border-color: #f59e0b;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+    border-color: #c084fc;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.25);
 }
 
 .insta-submit-btn {
     width: 100%;
-    background: var(--is-btn-bg, linear-gradient(135deg, #f59e0b 0%, #ef4444 100%));
-    color: var(--is-btn-text, #ffffff);
+    background: var(--ia-btn-bg, linear-gradient(135deg, #a855f7 0%, #d946ef 100%));
+    color: var(--ia-btn-text, #ffffff);
     border: none;
     border-radius: 12px;
     padding: 14px 20px;
@@ -123,7 +123,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+    box-shadow: 0 8px 20px rgba(168, 85, 247, 0.3);
     transition: transform 0.2s, filter 0.2s;
 }
 
@@ -168,75 +168,59 @@
     display: none;
 }
 
-.insta-stories-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
-}
-
-.insta-story-item {
+.insta-audio-preview-card {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 14px;
-    overflow: hidden;
+    padding: 20px;
     display: flex;
     flex-direction: column;
+    gap: 16px;
 }
 
-.insta-story-preview {
-    position: relative;
+.insta-audio-player {
     width: 100%;
-    aspect-ratio: 9/16;
-    background: #000000;
+    border-radius: 8px;
+    outline: none;
 }
 
-.insta-story-preview video,
-.insta-story-preview img {
+.insta-dl-mp3-btn {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.insta-story-actions {
-    padding: 12px;
-    background: rgba(0, 0, 0, 0.5);
-}
-
-.insta-story-dl-btn {
-    width: 100%;
-    padding: 10px 14px;
-    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #a855f7 0%, #d946ef 100%);
     color: #ffffff;
     border: none;
-    border-radius: 8px;
-    font-size: 12px;
+    border-radius: 10px;
+    font-size: 14px;
     font-weight: 700;
+    cursor: pointer;
     text-decoration: none;
     text-align: center;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    transition: filter 0.2s;
+    gap: 8px;
+    box-shadow: 0 4px 16px rgba(168, 85, 247, 0.35);
+    transition: all 0.2s;
 }
 
-.insta-story-dl-btn:hover {
+.insta-dl-mp3-btn:hover {
     filter: brightness(1.1);
+    transform: translateY(-1px);
     color: #ffffff;
 }
 
 /* Light Theme Preset */
 .insta-theme-light {
-    --is-bg: #ffffff;
-    --is-border: #e2e8f0;
-    --is-title: #0f172a;
-    --is-text: #64748b;
-    --is-input-bg: #f8fafc;
-    --is-input-text: #0f172a;
-    --is-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+    --ia-bg: #ffffff;
+    --ia-border: #e2e8f0;
+    --ia-title: #0f172a;
+    --ia-text: #64748b;
+    --ia-input-bg: #f8fafc;
+    --ia-input-text: #0f172a;
+    --ia-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
 }
-.insta-theme-light .insta-story-item {
+.insta-theme-light .insta-audio-preview-card {
     background: #f8fafc;
     border-color: #e2e8f0;
 }

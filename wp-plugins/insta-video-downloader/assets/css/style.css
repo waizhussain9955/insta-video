@@ -1,0 +1,270 @@
+/* Instagram Video Downloader - Gutenberg & Kadence Compatible Styles */
+:root {
+    --iv-bg: #09090b;
+    --iv-border: rgba(255, 255, 255, 0.12);
+    --iv-radius: 16px;
+    --iv-title: #ffffff;
+    --iv-text: #94a3b8;
+    --iv-input-bg: rgba(255, 255, 255, 0.05);
+    --iv-input-text: #ffffff;
+    --iv-btn-bg: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+    --iv-btn-text: #ffffff;
+    --iv-max-width: 680px;
+    --iv-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+.insta-video-wrapper {
+    width: 100%;
+    max-width: var(--iv-max-width, 680px);
+    margin: 24px auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    box-sizing: border-box;
+}
+
+.insta-video-wrapper * {
+    box-sizing: border-box;
+}
+
+.insta-video-card {
+    background: var(--iv-bg, #09090b);
+    border: 1px solid var(--iv-border, rgba(255, 255, 255, 0.12));
+    border-radius: var(--iv-radius, 16px);
+    padding: 32px 24px;
+    box-shadow: var(--iv-shadow, 0 20px 40px rgba(0,0,0,0.6));
+    backdrop-filter: blur(12px);
+    color: var(--iv-text, #94a3b8);
+}
+
+.insta-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.insta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(236, 72, 153, 0.12);
+    color: #f472b6;
+    border: 1px solid rgba(236, 72, 153, 0.25);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+}
+
+.insta-title {
+    font-size: clamp(20px, 3.5vw, 28px);
+    font-weight: 800;
+    color: var(--iv-title, #ffffff);
+    margin: 0 0 8px 0;
+    line-height: 1.25;
+}
+
+.insta-subtitle {
+    font-size: 13px;
+    color: var(--iv-text, #94a3b8);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.insta-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.insta-input-box {
+    position: relative;
+    width: 100%;
+}
+
+.insta-input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #ec4899;
+    display: flex;
+    align-items: center;
+}
+
+.insta-input {
+    width: 100%;
+    background: var(--iv-input-bg, rgba(255, 255, 255, 0.05));
+    color: var(--iv-input-text, #ffffff);
+    border: 1px solid var(--iv-border, rgba(255, 255, 255, 0.15));
+    border-radius: 12px;
+    padding: 14px 14px 14px 44px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.insta-input:focus {
+    border-color: #ec4899;
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.25);
+}
+
+.insta-submit-btn {
+    width: 100%;
+    background: var(--iv-btn-bg, linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%));
+    color: var(--iv-btn-text, #ffffff);
+    border: none;
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 8px 20px rgba(236, 72, 153, 0.3);
+    transition: transform 0.2s, filter 0.2s;
+}
+
+.insta-submit-btn:hover:not(:disabled) {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.insta-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.insta-spin {
+    animation: instaSpin 1s linear infinite;
+}
+
+@keyframes instaSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.insta-alert {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-top: 16px;
+    display: none;
+}
+
+.insta-alert.error {
+    display: block;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+}
+
+.insta-alert.success {
+    display: block;
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #86efac;
+}
+
+.insta-results {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: none;
+}
+
+.insta-media-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.insta-media-preview {
+    position: relative;
+    width: 100%;
+    max-height: 420px;
+    background: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.insta-media-preview video,
+.insta-media-preview img {
+    max-width: 100%;
+    max-height: 420px;
+    object-fit: contain;
+    display: block;
+}
+
+.insta-actions-row {
+    padding: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.insta-dl-btn {
+    flex: 1;
+    min-width: 130px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.insta-dl-video {
+    background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+}
+
+.insta-dl-video:hover {
+    filter: brightness(1.1);
+    color: #ffffff;
+}
+
+.insta-dl-audio {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f472b6;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.insta-dl-audio:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+}
+
+/* Light Theme Preset */
+.insta-theme-light {
+    --iv-bg: #ffffff;
+    --iv-border: #e2e8f0;
+    --iv-title: #0f172a;
+    --iv-text: #64748b;
+    --iv-input-bg: #f8fafc;
+    --iv-input-text: #0f172a;
+    --iv-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+}
+.insta-theme-light .insta-media-card {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+.insta-theme-light .insta-actions-row {
+    background: #f1f5f9;
+}
+.insta-theme-light .insta-dl-audio {
+    background: #e2e8f0;
+    color: #db2777;
+    border-color: #cbd5e1;
+}

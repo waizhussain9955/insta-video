@@ -54,20 +54,20 @@ function fetchInstagramWebProfileReelsPHP($usernameInput, $limit = 12) {
         $url = "https://www.instagram.com/api/v1/users/web_profile_info/?username={$cleanUsername}";
         
         $headers = [
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-            'X-IG-App-ID' => '936619743392459',
-            'X-Requested-With' => 'XMLHttpRequest',
-            'X-ASBD-ID' => '129477',
-            'X-IG-WWW-Claim' => '0',
-            'Sec-Ch-Ua' => '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
-            'Sec-Ch-Ua-Mobile' => '?0',
-            'Sec-Ch-Ua-Platform' => '"Windows"',
-            'Sec-Fetch-Dest' => 'empty',
-            'Sec-Fetch-Mode' => 'cors',
-            'Sec-Fetch-Site' => 'same-origin',
-            'Accept' => '*/*',
-            'Accept-Language' => 'en-US,en;q=0.9',
-            'Referer' => "https://www.instagram.com/{$cleanUsername}/"
+            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'X-IG-App-ID: 936619743392459',
+            'X-Requested-With: XMLHttpRequest',
+            'X-ASBD-ID: 129477',
+            'X-IG-WWW-Claim: 0',
+            'Sec-Ch-Ua: "Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+            'Sec-Ch-Ua-Mobile: ?0',
+            'Sec-Ch-Ua-Platform: "Windows"',
+            'Sec-Fetch-Dest: empty',
+            'Sec-Fetch-Mode: cors',
+            'Sec-Fetch-Site: same-origin',
+            'Accept: */*',
+            'Accept-Language: en-US,en;q=0.9',
+            "Referer: https://www.instagram.com/{$cleanUsername}/"
         ];
 
         $ch = curl_init($url);
@@ -196,9 +196,9 @@ function fetchSnapSaveMediaPHP($url) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['url' => $url]));
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/x-www-form-urlencoded',
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-            'Origin' => 'https://snapsave.app',
-            'Referer' => 'https://snapsave.app/'
+            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Origin: https://snapsave.app',
+            'Referer: https://snapsave.app/'
         ]);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_TIMEOUT, 12);
