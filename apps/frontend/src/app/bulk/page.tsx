@@ -70,7 +70,15 @@ export default function BulkVideoDownloader() {
         setSelected(fetchedPosts.map((p: ProfileVideo) => p.id));
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || "Could not fetch profile videos. Please verify the account is public.");
+      let msg = err.response?.data?.error;
+      if (!msg) {
+        if (err.code === 'ECONNABORTED' || (err.message && err.message.toLowerCase().includes('timeout'))) {
+          msg = "Instagram request timed out. Instagram may be rate-limiting profile queries from shared IPs. Please try entering a direct Reel URL or re-try in a few moments.";
+        } else {
+          msg = err.message || "Could not fetch profile videos. Please verify the username or link is valid and public.";
+        }
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }

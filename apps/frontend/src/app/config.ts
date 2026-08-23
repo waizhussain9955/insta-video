@@ -17,7 +17,7 @@ export async function requestDownloaderApi(payload: any) {
       const endpoint = `${API_BASE_URL.replace(/\/$/, '')}/api/download`;
       const resp = await axios.post(endpoint, payload, {
         headers: { 'Content-Type': 'application/json' },
-        timeout: 15000
+        timeout: 35000
       });
       if (resp.data && (resp.data.posts || resp.data.stories || resp.data.media || resp.data.success)) {
         return resp.data;
@@ -32,7 +32,7 @@ export async function requestDownloaderApi(payload: any) {
   try {
     const localResp = await axios.post('/api/download', payload, {
       headers: { 'Content-Type': 'application/json' },
-      timeout: 15000
+      timeout: 35000
     });
     if (localResp.data && (localResp.data.posts || localResp.data.stories || localResp.data.media || localResp.data.success)) {
       return localResp.data;
