@@ -11,34 +11,36 @@ export function getProxyUrl(url: string, format: string = ''): string {
 export async function requestDownloaderApi(payload: any) {
   let lastError: any = null;
 
-  // 1. Try configured API_BASE_URL first
+  // 1. Try Next.js local /api/download first (instant response)
+  try {
+    const localResp = await axios.post('/api/download', payload, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 15000
+    });
+    if (localResp.data && (localResp.data.posts || localResp.data.stories || localResp.data.media || localResp.data.success)) {
+      return localResp.data;
+    }
+  } catch (localErr: any) {
+    lastError = localErr;
+    console.warn("Local /api/download failed, trying configured API_BASE_URL:", localErr.message);
+  }
+
+  // 2. Fallback to configured API_BASE_URL if different from local
   if (API_BASE_URL && API_BASE_URL.trim() !== '') {
     try {
       const endpoint = `${API_BASE_URL.replace(/\/$/, '')}/api/download`;
       const resp = await axios.post(endpoint, payload, {
         headers: { 'Content-Type': 'application/json' },
-        timeout: 35000
+        timeout: 25000
       });
       if (resp.data && (resp.data.posts || resp.data.stories || resp.data.media || resp.data.success)) {
         return resp.data;
       }
+      return resp.data;
     } catch (err: any) {
-      lastError = err;
-      console.warn("Primary API endpoint failed, trying local fallback:", err.message);
+      throw err || lastError;
     }
   }
 
-  // 2. Failover to Next.js internal /api/download
-  try {
-    const localResp = await axios.post('/api/download', payload, {
-      headers: { 'Content-Type': 'application/json' },
-      timeout: 35000
-    });
-    if (localResp.data && (localResp.data.posts || localResp.data.stories || localResp.data.media || localResp.data.success)) {
-      return localResp.data;
-    }
-    return localResp.data;
-  } catch (localErr: any) {
-    throw lastError || localErr;
-  }
+  throw lastError || new Error("Failed to connect to downloader API.");
 }

@@ -183,7 +183,28 @@ async function fetchInstagramWebProfileReels(usernameInput: string, limit: numbe
     }
 
     if (posts.length > 0) return posts;
-  } catch (err: any) {}
+  } catch (err: any) {
+    // Fallback: Invoke PHP fetcher if local PHP is available
+    try {
+      const { execSync } = require('child_process');
+      const path = require('path');
+      const fs = require('fs');
+      const cleanUser = cleanInstagramUser(usernameInput);
+      const phpScript = path.resolve(process.cwd(), '..', '..', 'temp-backend', 'fetch_profile.php');
+      const altPhpScript = path.resolve(process.cwd(), 'temp-backend', 'fetch_profile.php');
+      const targetScript = fs.existsSync(phpScript) ? phpScript : (fs.existsSync(altPhpScript) ? altPhpScript : null);
+
+      if (targetScript && cleanUser) {
+        const out = execSync(`php "${targetScript}" "${cleanUser}" ${limit}`, { timeout: 12000 }).toString();
+        if (out && out.startsWith('[')) {
+          const parsed = JSON.parse(out);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      }
+    } catch (phpErr: any) {}
+  }
   return null;
 }
 
