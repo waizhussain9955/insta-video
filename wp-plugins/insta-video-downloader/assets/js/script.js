@@ -60,9 +60,9 @@
                         html += '<div class="insta-media-card" style="margin-bottom: 16px;">';
                         html += '  <div class="insta-media-preview">';
                         if (item.type === 'photo' || item.type === 'image') {
-                            html += '    <img src="' + proxyVideoUrl + '" alt="Instagram Post" loading="lazy" />';
+                            html += '    <img src="' + proxyVideoUrl + '" alt="Instagram Post" loading="lazy" decoding="async" />';
                         } else {
-                            html += '    <video src="' + proxyVideoUrl + '" controls playsinline poster="' + proxyVideoUrl + '" preload="metadata"></video>';
+                            html += '    <video src="' + proxyVideoUrl + '" controls playsinline poster="' + previewUrl + '" preload="none"></video>';
                         }
                         html += '  </div>';
                         html += '  <div class="insta-actions-row">';

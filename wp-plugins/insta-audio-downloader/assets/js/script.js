@@ -64,7 +64,7 @@
                     html += '      <span style="font-size: 12px; color: #94a3b8;">High Quality • 320 kbps</span>';
                     html += '    </div>';
                     html += '  </div>';
-                    html += '  <audio controls src="' + streamUrl + '" class="insta-audio-player"></audio>';
+                    html += '  <audio controls src="' + streamUrl + '" preload="none" class="insta-audio-player"></audio>';
                     html += '  <a href="' + mp3DownloadUrl + '" download="instagram_audio_' + Date.now() + '.mp3" class="insta-dl-mp3-btn" target="_blank" rel="noopener">';
                     html += '    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
                     html += '    Download Genuine MP3 Audio';

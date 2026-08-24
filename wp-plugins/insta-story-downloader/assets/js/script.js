@@ -76,9 +76,9 @@
                         html += '<div class="insta-story-item">';
                         html += '  <div class="insta-story-preview">';
                         if (isVideo) {
-                            html += '    <video src="' + proxyUrl + '" controls playsinline poster="' + (story.preview || '') + '" preload="metadata"></video>';
+                            html += '    <video src="' + proxyUrl + '" controls playsinline poster="' + (story.preview || '') + '" preload="none"></video>';
                         } else {
-                            html += '    <img src="' + proxyUrl + '" alt="Story item ' + (idx + 1) + '" loading="lazy" />';
+                            html += '    <img src="' + proxyUrl + '" alt="Story item ' + (idx + 1) + '" loading="lazy" decoding="async" />';
                         }
                         html += '  </div>';
                         html += '  <div class="insta-story-actions">';

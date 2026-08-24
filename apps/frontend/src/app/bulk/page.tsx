@@ -408,7 +408,7 @@ export default function BulkVideoDownloader() {
 
                     <video 
                       controls 
-                      preload="metadata"
+                      preload="none"
                       poster={proxyMediaUrl}
                       className="w-full h-full object-cover"
                       onError={() => markBroken(post.id)}

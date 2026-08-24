@@ -132,7 +132,7 @@
                     html += '    <input type="checkbox" class="insta-checkbox" data-id="' + id + '" ' + (isSelected ? 'checked' : '') + ' />';
                     html += '  </div>';
                     html += '  <div class="insta-thumb-container">';
-                    html += '    <video src="' + videoUrl + '" playsinline poster="' + (post.preview || '') + '" preload="metadata" muted onmouseover="this.play()" onmouseout="this.pause()"></video>';
+                    html += '    <video src="' + videoUrl + '" playsinline poster="' + (post.preview || '') + '" preload="none" muted onmouseover="this.play()" onmouseout="this.pause()"></video>';
                     html += '  </div>';
                     html += '  <div class="insta-item-footer">';
                     html += '    <a href="' + proxyUrl + '" download="' + targetUsername + '_reel_' + id + '.mp4" class="insta-mini-btn" target="_blank" rel="noopener">Video</a>';
