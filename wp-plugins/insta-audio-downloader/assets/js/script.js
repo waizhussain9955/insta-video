@@ -51,8 +51,7 @@
                     }
 
                     var rawMediaUrl = mediaList[0].video_url || mediaList[0].url;
-                    var streamUrl = apiUrl.replace(/\/$/, '') + '/api/proxy?url=' + encodeURIComponent(rawMediaUrl);
-                    var mp3DownloadUrl = apiUrl.replace(/\/$/, '') + '/api/proxy?url=' + encodeURIComponent(rawMediaUrl) + '&format=mp3';
+                    var dlName = 'instagram_audio_' + Date.now() + '.mp3';
 
                     var html = '<div class="insta-audio-preview-card">';
                     html += '  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">';
@@ -60,19 +59,50 @@
                     html += '      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
                     html += '    </div>';
                     html += '    <div>';
-                    html += '      <h4 style="margin: 0; font-size: 15px; color: #fff;">Extracted MP3 Audio Stream</h4>';
-                    html += '      <span style="font-size: 12px; color: #94a3b8;">High Quality • 320 kbps</span>';
+                    html += '      <h4 style="margin: 0; font-size: 15px; color: #fff;">Direct Audio Track (0 Server Bandwidth)</h4>';
+                    html += '      <span style="font-size: 12px; color: #94a3b8;">High Quality Stream • Instagram CDN</span>';
                     html += '    </div>';
                     html += '  </div>';
-                    html += '  <audio controls src="' + streamUrl + '" preload="none" class="insta-audio-player"></audio>';
-                    html += '  <a href="' + mp3DownloadUrl + '" download="instagram_audio_' + Date.now() + '.mp3" class="insta-dl-mp3-btn" target="_blank" rel="noopener">';
+                    html += '  <audio controls src="' + rawMediaUrl + '" preload="none" referrerpolicy="no-referrer" class="insta-audio-player"></audio>';
+                    html += '  <a href="' + rawMediaUrl + '" download="' + dlName + '" class="insta-dl-mp3-btn direct-cdn-audio-btn" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">';
                     html += '    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-                    html += '    Download Genuine MP3 Audio';
+                    html += '    Download Audio (Direct CDN)';
                     html += '  </a>';
                     html += '</div>';
 
                     playerContainer.innerHTML = html;
                     resultsBox.style.display = 'block';
+
+                    var dlBtn = playerContainer.querySelector('.direct-cdn-audio-btn');
+                    if (dlBtn) {
+                        dlBtn.addEventListener('click', function(ev) {
+                            var directUrl = this.getAttribute('href');
+                            if (window.fetch) {
+                                ev.preventDefault();
+                                var originalText = this.innerHTML;
+                                var btnRef = this;
+                                btnRef.innerHTML = '<span>⏳ Downloading audio track...</span>';
+                                fetch(directUrl, { mode: 'cors', referrerPolicy: 'no-referrer' })
+                                    .then(function(r) { return r.blob(); })
+                                    .then(function(b) {
+                                        var bUrl = window.URL.createObjectURL(b);
+                                        var tempA = document.createElement('a');
+                                        tempA.href = bUrl;
+                                        tempA.download = dlName;
+                                        document.body.appendChild(tempA);
+                                        tempA.click();
+                                        document.body.removeChild(tempA);
+                                        window.URL.revokeObjectURL(bUrl);
+                                        btnRef.innerHTML = '<span>✅ Audio Downloaded!</span>';
+                                        setTimeout(function() { btnRef.innerHTML = originalText; }, 2500);
+                                    })
+                                    .catch(function() {
+                                        window.open(directUrl, '_blank');
+                                        btnRef.innerHTML = originalText;
+                                    });
+                            }
+                        });
+                    }
                 } catch (err) {
                     alertBox.className = 'insta-alert error';
                     alertBox.textContent = err.message || 'Failed to extract audio track.';

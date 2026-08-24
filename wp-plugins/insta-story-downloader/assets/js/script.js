@@ -71,18 +71,19 @@
                     storiesList.forEach(function (story, idx) {
                         var mediaUrl = story.video_url || story.url;
                         var isVideo = story.type === 'video' || (mediaUrl && mediaUrl.indexOf('.mp4') !== -1);
-                        var proxyUrl = apiUrl.replace(/\/$/, '') + '/api/proxy?url=' + encodeURIComponent(mediaUrl);
+                        var previewUrl = story.preview || mediaUrl;
+                        var dlName = targetUser + '_story_' + (idx + 1) + (isVideo ? '.mp4' : '.jpg');
 
                         html += '<div class="insta-story-item">';
                         html += '  <div class="insta-story-preview">';
                         if (isVideo) {
-                            html += '    <video src="' + proxyUrl + '" controls playsinline poster="' + (story.preview || '') + '" preload="none"></video>';
+                            html += '    <video src="' + mediaUrl + '" controls playsinline poster="' + previewUrl + '" preload="none" referrerpolicy="no-referrer"></video>';
                         } else {
-                            html += '    <img src="' + proxyUrl + '" alt="Story item ' + (idx + 1) + '" loading="lazy" decoding="async" />';
+                            html += '    <img src="' + previewUrl + '" alt="Story item ' + (idx + 1) + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" />';
                         }
                         html += '  </div>';
                         html += '  <div class="insta-story-actions">';
-                        html += '    <a href="' + proxyUrl + '" download="' + targetUser + '_story_' + (idx + 1) + (isVideo ? '.mp4' : '.jpg') + '" class="insta-story-dl-btn" target="_blank" rel="noopener">';
+                        html += '    <a href="' + mediaUrl + '" download="' + dlName + '" class="insta-story-dl-btn direct-cdn-story-btn" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">';
                         html += '      Download ' + (isVideo ? 'Video Story' : 'Photo Story');
                         html += '    </a>';
                         html += '  </div>';
@@ -91,6 +92,38 @@
 
                     storiesGrid.innerHTML = html;
                     resultsBox.style.display = 'block';
+
+                    // Attach client-side direct CDN trigger (0 server bandwidth)
+                    storiesGrid.querySelectorAll('.direct-cdn-story-btn').forEach(function(btn) {
+                        btn.addEventListener('click', function(ev) {
+                            var directUrl = this.getAttribute('href');
+                            var dlName = this.getAttribute('download') || 'instagram_story.mp4';
+                            if (window.fetch) {
+                                ev.preventDefault();
+                                var originalText = this.textContent;
+                                var btnRef = this;
+                                btnRef.textContent = '⏳ Downloading...';
+                                fetch(directUrl, { mode: 'cors', referrerPolicy: 'no-referrer' })
+                                    .then(function(r) { return r.blob(); })
+                                    .then(function(b) {
+                                        var bUrl = window.URL.createObjectURL(b);
+                                        var tempA = document.createElement('a');
+                                        tempA.href = bUrl;
+                                        tempA.download = dlName;
+                                        document.body.appendChild(tempA);
+                                        tempA.click();
+                                        document.body.removeChild(tempA);
+                                        window.URL.revokeObjectURL(bUrl);
+                                        btnRef.textContent = '✅ Downloaded!';
+                                        setTimeout(function() { btnRef.textContent = originalText; }, 2500);
+                                    })
+                                    .catch(function() {
+                                        window.open(directUrl, '_blank');
+                                        btnRef.textContent = originalText;
+                                    });
+                            }
+                        });
+                    });
                 } catch (err) {
                     alertBox.className = 'insta-alert error';
                     alertBox.textContent = err.message || 'Unable to retrieve stories.';

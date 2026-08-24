@@ -54,26 +54,63 @@
                     mediaList.forEach(function (item, idx) {
                         var mediaUrl = item.video_url || item.url;
                         var previewUrl = item.preview || mediaUrl;
-                        var proxyVideoUrl = apiUrl.replace(/\/$/, '') + '/api/proxy?url=' + encodeURIComponent(mediaUrl);
-                        var proxyAudioUrl = apiUrl.replace(/\/$/, '') + '/api/proxy?url=' + encodeURIComponent(mediaUrl) + '&format=mp3';
+                        var isPhoto = item.type === 'photo' || item.type === 'image';
+                        var filename = 'instagram_' + (isPhoto ? 'photo_' : 'video_') + (idx + 1) + (isPhoto ? '.jpg' : '.mp4');
+                        var audioFilename = 'instagram_audio_' + (idx + 1) + '.mp3';
 
                         html += '<div class="insta-media-card" style="margin-bottom: 16px;">';
                         html += '  <div class="insta-media-preview">';
-                        if (item.type === 'photo' || item.type === 'image') {
-                            html += '    <img src="' + proxyVideoUrl + '" alt="Instagram Post" loading="lazy" decoding="async" />';
+                        if (isPhoto) {
+                            html += '    <img src="' + previewUrl + '" alt="Instagram Post" loading="lazy" decoding="async" referrerpolicy="no-referrer" />';
                         } else {
-                            html += '    <video src="' + proxyVideoUrl + '" controls playsinline poster="' + previewUrl + '" preload="none"></video>';
+                            html += '    <video src="' + mediaUrl + '" controls playsinline poster="' + previewUrl + '" preload="none" referrerpolicy="no-referrer"></video>';
                         }
                         html += '  </div>';
                         html += '  <div class="insta-actions-row">';
-                        html += '    <a href="' + proxyVideoUrl + '" download="instagram_video_' + (idx + 1) + '.mp4" class="insta-dl-btn insta-dl-video" target="_blank" rel="noopener">Download HD Video (MP4)</a>';
-                        html += '    <a href="' + proxyAudioUrl + '" download="instagram_audio_' + (idx + 1) + '.mp3" class="insta-dl-btn insta-dl-audio" target="_blank" rel="noopener">Download MP3 Audio</a>';
+                        if (isPhoto) {
+                            html += '    <a href="' + mediaUrl + '" download="' + filename + '" class="insta-dl-btn insta-dl-video direct-cdn-btn" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Download Full HD Photo</a>';
+                        } else {
+                            html += '    <a href="' + mediaUrl + '" download="' + filename + '" class="insta-dl-btn insta-dl-video direct-cdn-btn" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Download HD Video (Direct CDN)</a>';
+                            html += '    <a href="' + mediaUrl + '" download="' + audioFilename + '" class="insta-dl-btn insta-dl-audio direct-cdn-btn" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Download Audio Track</a>';
+                        }
                         html += '  </div>';
                         html += '</div>';
                     });
 
                     mediaContainer.innerHTML = html;
                     resultsBox.style.display = 'block';
+
+                    // Attach client-side direct CDN trigger (Zero server bandwidth)
+                    mediaContainer.querySelectorAll('.direct-cdn-btn').forEach(function(btn) {
+                        btn.addEventListener('click', function(ev) {
+                            var directUrl = this.getAttribute('href');
+                            var dlName = this.getAttribute('download') || 'instagram_media.mp4';
+                            if (window.fetch) {
+                                ev.preventDefault();
+                                var originalText = this.textContent;
+                                var btnRef = this;
+                                btnRef.textContent = '⏳ Downloading from CDN...';
+                                fetch(directUrl, { mode: 'cors', referrerPolicy: 'no-referrer' })
+                                    .then(function(r) { return r.blob(); })
+                                    .then(function(b) {
+                                        var bUrl = window.URL.createObjectURL(b);
+                                        var tempA = document.createElement('a');
+                                        tempA.href = bUrl;
+                                        tempA.download = dlName;
+                                        document.body.appendChild(tempA);
+                                        tempA.click();
+                                        document.body.removeChild(tempA);
+                                        window.URL.revokeObjectURL(bUrl);
+                                        btnRef.textContent = '✅ Download Started!';
+                                        setTimeout(function() { btnRef.textContent = originalText; }, 2500);
+                                    })
+                                    .catch(function() {
+                                        window.open(directUrl, '_blank');
+                                        btnRef.textContent = originalText;
+                                    });
+                            }
+                        });
+                    });
                 } catch (err) {
                     alertBox.className = 'insta-alert error';
                     alertBox.textContent = err.message || 'Something went wrong. Please try again.';

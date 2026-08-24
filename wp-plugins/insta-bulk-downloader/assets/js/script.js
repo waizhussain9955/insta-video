@@ -135,8 +135,8 @@
                     html += '    <video src="' + videoUrl + '" playsinline poster="' + (post.preview || '') + '" preload="none" muted onmouseover="this.play()" onmouseout="this.pause()"></video>';
                     html += '  </div>';
                     html += '  <div class="insta-item-footer">';
-                    html += '    <a href="' + proxyUrl + '" download="' + targetUsername + '_reel_' + id + '.mp4" class="insta-mini-btn" target="_blank" rel="noopener">Video</a>';
-                    html += '    <a href="' + audioProxy + '" download="' + targetUsername + '_audio_' + id + '.mp3" class="insta-mini-btn" target="_blank" rel="noopener">MP3</a>';
+                    html += '    <a href="' + videoUrl + '" download="' + targetUsername + '_reel_' + id + '.mp4" class="insta-mini-btn" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Video</a>';
+                    html += '    <a href="' + videoUrl + '" download="' + targetUsername + '_audio_' + id + '.mp3" class="insta-mini-btn" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">MP3</a>';
                     html += '  </div>';
                     html += '</div>';
                 });
