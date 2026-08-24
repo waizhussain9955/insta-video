@@ -7,6 +7,8 @@
             var apiUrl = wrapper.dataset.api || 'https://api.thecalicocats.com';
             var form = wrapper.querySelector('.insta-form');
             var input = wrapper.querySelector('.insta-input');
+            var pasteBtn = wrapper.querySelector('.insta-paste-btn');
+            var clearBtn = wrapper.querySelector('.insta-clear-btn');
             var submitBtn = wrapper.querySelector('.insta-submit-btn');
             var btnText = submitBtn.querySelector('.btn-text');
             var btnLoader = submitBtn.querySelector('.btn-loader');
@@ -30,6 +32,42 @@
                 return clean.replace('@', '');
             }
 
+            // 1. Clear button
+            if (input && clearBtn) {
+                input.addEventListener('input', function () {
+                    clearBtn.style.display = input.value.trim().length > 0 ? 'inline-flex' : 'none';
+                });
+                clearBtn.addEventListener('click', function () {
+                    input.value = '';
+                    clearBtn.style.display = 'none';
+                    input.focus();
+                });
+            }
+
+            // 2. Paste button
+            if (pasteBtn && input) {
+                pasteBtn.addEventListener('click', async function () {
+                    try {
+                        if (navigator.clipboard && navigator.clipboard.readText) {
+                            var clipText = await navigator.clipboard.readText();
+                            if (clipText) {
+                                input.value = clipText.trim();
+                                if (clearBtn) clearBtn.style.display = 'inline-flex';
+                                pasteBtn.textContent = '✅ Pasted!';
+                                setTimeout(function () {
+                                    pasteBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Paste';
+                                }, 1500);
+                            }
+                        } else {
+                            input.focus();
+                        }
+                    } catch (e) {
+                        input.focus();
+                    }
+                });
+            }
+
+            // 3. Submit
             form.addEventListener('submit', async function (e) {
                 e.preventDefault();
                 var targetUser = cleanUsername(input.value);
@@ -38,7 +76,6 @@
                 alertBox.className = 'insta-alert';
                 alertBox.style.display = 'none';
                 alertBox.textContent = '';
-                resultsBox.style.display = 'none';
                 storiesGrid.innerHTML = '';
                 submitBtn.disabled = true;
                 btnText.style.display = 'none';
@@ -93,9 +130,9 @@
                     storiesGrid.innerHTML = html;
                     resultsBox.style.display = 'block';
 
-                    // Attach client-side direct CDN trigger (0 server bandwidth)
-                    storiesGrid.querySelectorAll('.direct-cdn-story-btn').forEach(function(btn) {
-                        btn.addEventListener('click', function(ev) {
+                    // Direct CDN Client download
+                    storiesGrid.querySelectorAll('.direct-cdn-story-btn').forEach(function (btn) {
+                        btn.addEventListener('click', function (ev) {
                             var directUrl = this.getAttribute('href');
                             var dlName = this.getAttribute('download') || 'instagram_story.mp4';
                             if (window.fetch) {
@@ -104,8 +141,8 @@
                                 var btnRef = this;
                                 btnRef.textContent = '⏳ Downloading...';
                                 fetch(directUrl, { mode: 'cors', referrerPolicy: 'no-referrer' })
-                                    .then(function(r) { return r.blob(); })
-                                    .then(function(b) {
+                                    .then(function (r) { return r.blob(); })
+                                    .then(function (b) {
                                         var bUrl = window.URL.createObjectURL(b);
                                         var tempA = document.createElement('a');
                                         tempA.href = bUrl;
@@ -115,9 +152,9 @@
                                         document.body.removeChild(tempA);
                                         window.URL.revokeObjectURL(bUrl);
                                         btnRef.textContent = '✅ Downloaded!';
-                                        setTimeout(function() { btnRef.textContent = originalText; }, 2500);
+                                        setTimeout(function () { btnRef.textContent = originalText; }, 2500);
                                     })
-                                    .catch(function() {
+                                    .catch(function () {
                                         window.open(directUrl, '_blank');
                                         btnRef.textContent = originalText;
                                     });
